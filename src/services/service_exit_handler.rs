@@ -1,0 +1,183 @@
+use lksystem::ui;
+use crate::runtime_info::*;
+use crate::signal_handler::ChildTermination;
+use crate::units::*;
+
+pub fn service_exit_handler_new_thread(
+    pid: nix::unistd::Pid,
+    code: ChildTermination,
+    run_info: ArcMutRuntimeInfo,
+) {
+    std::thread::spawn(move || {
+        if let Err(e) = service_exit_handler(pid, code, &*run_info.read().unwrap()) {
+            ui::error(format!("{}", e));
+        }
+    });
+}
+
+pub fn should_restart_for_exit(restart: ServiceRestart, code: ChildTermination) -> bool {
+    match restart {
+        ServiceRestart::Always => true,
+        ServiceRestart::OnFailure => !code.success(),
+        ServiceRestart::OnSuccess => code.success(),
+        ServiceRestart::No => false,
+    }
+}
+
+pub fn service_exit_handler(
+    pid: nix::unistd::Pid,
+    code: ChildTermination,
+    run_info: &RuntimeInfo,
+) -> Result<(), String> {
+    ui::log(format!("Exit handler with pid: {}", pid));
+    // Handle exiting of helper processes and oneshot processes
+    {
+        let pid_table_locked = &mut *run_info.pid_table.lock().unwrap();
+        let entry = pid_table_locked.get(&pid);
+        match entry {
+            Some(entry) => match entry {
+                PidEntry::Service(_id, _srvctype) => {
+                    // ignore at this point, will be handled below
+                }
+                PidEntry::Helper(_id, srvc_name) => {
+                    ui::log(format!(
+                        "Helper process for service: {} exited with: {:?}",
+                        srvc_name,
+                        code
+                    ));
+                    // this will be collected by the thread that waits for the helper process to exit
+                    pid_table_locked.insert(pid, PidEntry::HelperExited(code));
+                    return Ok(());
+                }
+                PidEntry::HelperExited(_) => {
+                    // TODO is this sensibel? How do we handle this?
+                    ui::error(format!("Pid exited that was already saved as exited"));
+                    return Ok(());
+                }
+                PidEntry::ServiceExited(_) => {
+                    // TODO is this sensibel? How do we handle this?
+                    ui::error(format!("Pid exited that was already saved as exited"));
+                    return Ok(());
+                }
+            },
+            None => {
+                ui::log(format!(
+                    "All processes spawned by lksystem have a pid entry. This did not: {}. Probably a rerooted orphan that got killed.",
+                    pid
+                ));
+                return Ok(());
+            }
+        }
+    }
+    // find out which service exited and if it was a oneshot service save an entry in the pid table that marks the service as exited
+    let srvc_id = {
+        let pid_table_locked = &mut *run_info.pid_table.lock().unwrap();
+        let entry = pid_table_locked.remove(&pid);
+        match entry {
+            Some(entry) => match entry {
+                PidEntry::Service(id, _srvctype) => {
+                    ui::log(format!("Save service as exited. PID: {}", pid));
+                    pid_table_locked.insert(pid, PidEntry::ServiceExited(code));
+                    id
+                }
+                PidEntry::Helper(_id, _srvc_name) => {
+                    unreachable!();
+                }
+                PidEntry::HelperExited(_) => {
+                    unreachable!();
+                }
+                PidEntry::ServiceExited(_) => {
+                    unreachable!();
+                }
+            },
+            None => {
+                unreachable!();
+            }
+        }
+    };
+    let unit = match run_info.unit_table.get(&srvc_id) {
+        Some(unit) => unit,
+        None => {
+            panic!("Tried to run a unit that has been removed from the map");
+        }
+    };
+    if let Specific::Service(srvc) = &unit.specific {
+        if srvc.conf.srcv_type == ServiceType::OneShot {
+            let mut status = unit.common.status.write().unwrap();
+            if srvc.conf.remain_after_exit {
+                *status = UnitStatus::Started(StatusStarted::Running);
+            } else {
+                *status = UnitStatus::Stopped(StatusStopped::StoppedFinal, vec![]);
+            }
+        }
+    }
+    // kill oneshot service processes. There should be none but just in case...
+    if let Specific::Service(srvc) = &unit.specific {
+        if srvc.conf.srcv_type == ServiceType::OneShot {
+            // There is no safe way to acquire the service state lock here while
+            // `ServiceState::activate` still holds it in the caller. For oneshot
+            // services we assume the terminal process has already exited and no
+            // remaining process group cleanup is required here.
+            return Ok(());
+        }
+    }
+    ui::log(format!("Check if we want to restart the unit"));
+    let name = &unit.id.name;
+    let restart_unit = {
+        if let Specific::Service(srvc) = &unit.specific {
+            ui::log(format!(
+                "Service with id: {:?}, name: {} pid: {} exited with: {:?}",
+                srvc_id,
+                unit.id.name,
+                pid,
+                code
+            ));
+            should_restart_for_exit(srvc.conf.restart, code)
+        } else {
+            false
+        }
+    };
+    // check that the status is "Started". If thats not the case this service got killed by something else (control interface for example) so dont interfere
+    {
+        let status_locked = &*unit.common.status.read().unwrap();
+        if !(status_locked.is_started() || *status_locked == UnitStatus::Starting) {
+            ui::log(format!("Exit handler ignores exit of service {}. Its status is not 'Started'/'Starting', it is: {:?}", name, *status_locked));
+            return Ok(());
+        }
+    }
+    if restart_unit {
+        ui::log(format!("Restart service {} after it died", name));
+        let delay = match &unit.specific {
+            Specific::Service(srvc) => srvc.conf.restart_sec,
+            _ => None,
+        };
+        if let Some(delay) = delay {
+            std::thread::sleep(delay);
+        }
+        crate::units::reactivate_unit(srvc_id, run_info).map_err(|e| format!("{}", e))?;
+    } else {
+        ui::log(format!(
+            "Recursively killing all services requiring service {}",
+            name
+        ));
+        loop {
+            let res = crate::units::deactivate_unit_recursive(&srvc_id, run_info);
+            let retry = if let Err(e) = &res {
+                if let UnitOperationErrorReason::DependencyError(_) = e.reason {
+                    // Only retry if this is the case. This only occurs if, while the units are being deactivated,
+                    // another unit got activated that would not be able to run with this unit deactivated.
+                    // This should generally be pretty rare but it should be handled properly.
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
+            if !retry {
+                res.map_err(|e| format!("{}", e))?;
+            }
+        }
+    }
+    Ok(())
+}

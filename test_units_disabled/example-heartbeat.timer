@@ -1,0 +1,7 @@
+[Unit]
+Description=Example: run example-heartbeat.service periodically
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=30s
+Unit=example-heartbeat.service

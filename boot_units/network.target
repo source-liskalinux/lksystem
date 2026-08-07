@@ -1,0 +1,5 @@
+[Unit]
+Description=Network setup target for boot
+
+[Install]
+WantedBy=default.target

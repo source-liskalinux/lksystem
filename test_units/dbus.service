@@ -1,0 +1,11 @@
+[Unit]
+Description=D-Bus System Message Bus
+After=dbus.socket
+Requires=dbus.socket
+
+[Service]
+ExecStart=/usr/bin/dbus-daemon --system --nofork
+Restart=always
+
+[Install]
+WantedBy=default.target

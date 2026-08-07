@@ -1,0 +1,38 @@
+[package]
+name = "lksystem"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+signal-hook = "0.4.4"
+libc = "0.2"
+nix = { version = "0.31.3", features = ["process", "signal", "fs", "user", "socket", "mount", "poll", "event", "reboot"] }
+log = "0.4"
+fern = "0.7.1"
+chrono = "0.4"
+threadpool = "1.8"
+serde_json = "1.0"
+serde = { version = "1.0", features = [ "derive" ] }
+mlua = { version = "0.12.0", features = ["lua54", "vendored"] }
+rusqlite = { version = "0.40.1", features = ["bundled"] }
+dbus = "0.9"
+dbus-tree = "0.9"
+shlex = "2.0.1"
+clap = { version = "4.6.6", features = ["derive"] }
+shmemfdrs = "0.1"
+which = { version = "8.0.5" }
+home = "0.5.12"
+hashbrown = "0.17.1"
+colored = "3.1.1"
+
+[features]
+default = ["cgroups"]
+linux_eventfd = []
+cgroups = []
+
+[dev-dependencies]
+tempfile = "3.10"
+
+[[bin]]
+name = "lksystemctl"
+path = "src/bin/lksystemctl.rs"

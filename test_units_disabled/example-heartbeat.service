@@ -1,0 +1,6 @@
+[Unit]
+Description=Example: prints a heartbeat line (triggered by example-heartbeat.timer)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/echo heartbeat

@@ -1,0 +1,11 @@
+[Unit]
+Description=Starting Network Manager
+After=network.target
+Wants=network.target
+
+[Service]
+ExecStart=/usr/bin/NetworkManager --no-daemon
+Restart=always
+
+[Install]
+WantedBy=network.target
