@@ -1,4 +1,4 @@
-use lksystem::ui;
+use crate::ui;
 use nix::errno::Errno;
 use nix::mount::{mount, umount2, MsFlags, MntFlags};
 

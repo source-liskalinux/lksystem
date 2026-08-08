@@ -16,7 +16,7 @@
 
 use crate::runtime_info::ArcMutRuntimeInfo;
 use crate::units::*;
-use lksystem::ui;
+use crate::ui;
 
 #[cfg(target_os = "linux")]
 pub fn start_device_events_thread(run_info: ArcMutRuntimeInfo) {

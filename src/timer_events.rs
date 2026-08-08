@@ -23,7 +23,7 @@
 use crate::runtime_info::ArcMutRuntimeInfo;
 use crate::units::*;
 use chrono::Local;
-use lksystem::ui;
+use crate::ui;
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;

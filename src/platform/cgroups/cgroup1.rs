@@ -1,4 +1,4 @@
-use lksystem::ui;
+use crate::ui;
 use super::CgroupError;
 use std::fs;
 use std::io::Write;

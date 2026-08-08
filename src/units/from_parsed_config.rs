@@ -4,7 +4,7 @@ use crate::sockets::*;
 use crate::units::*;
 
 #[cfg(target_os = "linux")]
-use lksystem::ui;
+use crate::ui;
 
 use std::convert::TryInto;
 use std::path::PathBuf;

@@ -23,7 +23,7 @@
 //!
 //! The first token (before the first NUL) is a duplicate of `ACTION@DEVPATH` and
 //! is skipped; everything after it is parsed as `KEY=VALUE`.
-use lksystem::ui;
+use crate::ui;
 use std::collections::HashMap;
 use std::io;
 use std::os::unix::io::RawFd;

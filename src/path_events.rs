@@ -3,7 +3,7 @@
 
 use crate::runtime_info::ArcMutRuntimeInfo;
 use crate::units::*;
-use lksystem::ui;
+use crate::ui;
 use std::collections::HashMap;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};

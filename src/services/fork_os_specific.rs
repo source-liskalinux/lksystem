@@ -1,7 +1,7 @@
 use crate::units::PlatformSpecificServiceFields;
 use crate::units::ServiceConfig;
 use crate::platform::cgroups;
-use lksystem::ui;
+use crate::ui;
 
 /// This is the place to do anything that is not standard unix but specific to one os. Like cgroups
 pub fn pre_fork_os_specific(srvc: &ServiceConfig) -> Result<(), String> {

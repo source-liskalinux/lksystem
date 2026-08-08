@@ -1,5 +1,5 @@
 use std::{net::TcpListener, net::UdpSocket, os::unix::io::AsRawFd, os::unix::io::RawFd};
-use lksystem::ui;
+use crate::ui;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct TcpSocketConfig {

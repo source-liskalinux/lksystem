@@ -1,5 +1,5 @@
 //! Wait for sockets to activate their respective services
-use lksystem::ui;
+use crate::ui;
 
 use crate::runtime_info::*;
 use crate::units::*;

@@ -2,7 +2,7 @@
 //! Stdout and stderr get redirected to the normal stdout/err but are prefixed with a unique string to identify their output
 //! streams from the notification sockets get parsed and applied to the respective service
 
-use lksystem::ui;
+use crate::ui;
 
 use crate::platform::reset_event_fd;
 use crate::runtime_info::*;

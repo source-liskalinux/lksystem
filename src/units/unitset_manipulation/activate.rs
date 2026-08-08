@@ -4,7 +4,7 @@ use crate::runtime_info::*;
 use crate::services::ServiceErrorReason;
 use crate::units::*;
 
-use lksystem::ui;
+use crate::ui;
 use std::sync::{Arc, Mutex};
 use threadpool::ThreadPool;
 

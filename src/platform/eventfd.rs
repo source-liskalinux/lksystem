@@ -10,7 +10,7 @@ pub use pipe_eventfd::*;
 #[cfg(not(feature = "linux_eventfd"))]
 mod pipe_eventfd {
     use std::os::unix::io::{IntoRawFd, RawFd};
-    use lksystem::ui;
+    use crate::ui;
     #[derive(Clone, Copy, Debug)]
     pub struct EventFd(RawFd, RawFd);
     // EventFd(Read,Write)
@@ -58,7 +58,7 @@ pub use linux_eventfd::*;
 
 #[cfg(feature = "linux_eventfd")]
 mod linux_eventfd {
-    use lksystem::ui;
+    use crate::ui;
     use std::os::unix::io::RawFd;
     #[derive(Clone, Copy)]
     pub struct EventFd(RawFd);

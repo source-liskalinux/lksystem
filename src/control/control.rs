@@ -1,7 +1,7 @@
 use crate::runtime_info::*;
 use crate::units::*;
 use dbus_tree::Factory;
-use lksystem::ui;
+use crate::ui;
 use serde_json::Value;
 
 pub fn open_all_sockets(run_info: ArcMutRuntimeInfo, conf: &crate::config::Config) {

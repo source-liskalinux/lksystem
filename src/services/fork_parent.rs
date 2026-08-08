@@ -1,4 +1,4 @@
-use lksystem::ui;
+use crate::ui;
 use crate::runtime_info::*;
 use crate::services::RunCmdError;
 use crate::services::Service;

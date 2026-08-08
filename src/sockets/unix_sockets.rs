@@ -3,7 +3,7 @@ use std::{
     os::unix::io::RawFd,
     os::unix::net::{UnixDatagram, UnixListener},
 };
-use lksystem::ui;
+use crate::ui;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum UnixSocketConfig {

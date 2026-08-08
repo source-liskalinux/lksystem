@@ -1,7 +1,7 @@
 //! Parse all supported unit types / options for these and do needed operations like matching services <-> sockets and adding implicit dependencies like
 //! all sockets to socket.target
 
-use lksystem::ui;
+use crate::ui;
 
 use crate::units::*;
 use std::collections::HashMap;

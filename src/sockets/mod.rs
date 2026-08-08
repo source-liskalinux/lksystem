@@ -4,7 +4,7 @@ mod fifo;
 mod network_sockets;
 mod unix_sockets;
 pub use fifo::*;
-use lksystem::ui;
+use crate::ui;
 pub use network_sockets::*;
 pub use unix_sockets::*;
 use std::{os::unix::io::{AsRawFd, BorrowedFd}, os::unix::io::RawFd};

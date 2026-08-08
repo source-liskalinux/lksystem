@@ -4,7 +4,7 @@
 // cgroups we should mostly comply to the guidelines here https://www.freedesktop.org/wiki/Software/systemd/PaxControlGroups/
 use std::fs;
 use std::io::{Read, Write};
-use lksystem::ui;
+use crate::ui;
 mod cgroup1;
 mod cgroup2;
 

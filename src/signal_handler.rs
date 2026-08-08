@@ -2,7 +2,7 @@
 
 use crate::runtime_info::*;
 use crate::services;
-use lksystem::ui;
+use crate::ui;
 use signal_hook::iterator::Signals;
 
 pub fn handle_signals(mut signals: Signals, run_info: ArcMutRuntimeInfo) {
