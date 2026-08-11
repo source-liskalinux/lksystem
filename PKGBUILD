@@ -29,19 +29,16 @@ if [[ -z ${BUILDDIR:-} || ${BUILDDIR:-} -ef "$startdir" ]]; then
 fi
 
 # This PKGBUILD packages the checked-out local source tree. Run makepkg or
-# lkmake from the repository root; no network source archive is required.
+# lkmake from the repository root.
 build() {
-    cd "$startdir"
     make PREFIX=/usr
 }
 
 check() {
-    cd "$startdir"
     make check
 }
 
 package() {
-    cd "$startdir"
     make DESTDIR="$pkgdir" PREFIX=/usr install
     install -Dm644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
 }
