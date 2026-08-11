@@ -30,8 +30,9 @@ install: all
 	$(INSTALL) -m 0755 etc/target/release/lksystem-stage2 $(DESTDIR)$(SYSCONFDIR)/lksystem/2
 	$(INSTALL) -m 0755 etc/target/release/lksystem-stage3 $(DESTDIR)$(SYSCONFDIR)/lksystem/3
 	$(INSTALL) -m 0755 etc/target/release/lksystem-ctrlaltdel $(DESTDIR)$(SYSCONFDIR)/lksystem/ctrlaltdel
-	$(INSTALL) -d $(DESTDIR)$(SYSCONFDIR)/lksystem/service/dbus $(DESTDIR)$(SYSCONFDIR)/lksystem/service/networkmanager $(addprefix $(DESTDIR)$(SYSCONFDIR)/lksystem/service/,$(GETTY_SERVICES))
+	$(INSTALL) -d $(DESTDIR)$(SYSCONFDIR)/lksystem/service/dbus $(DESTDIR)$(SYSCONFDIR)/lksystem/service/elogind $(DESTDIR)$(SYSCONFDIR)/lksystem/service/networkmanager $(addprefix $(DESTDIR)$(SYSCONFDIR)/lksystem/service/,$(GETTY_SERVICES))
 	$(INSTALL) -m 0755 etc/service/dbus/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/dbus/run
+	$(INSTALL) -m 0755 etc/service/elogind/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/elogind/run
 	$(INSTALL) -m 0755 etc/service/networkmanager/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/networkmanager/run
 	for service in $(GETTY_SERVICES); do $(INSTALL) -m 0755 etc/service/$$service/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/$$service/run; done
 
