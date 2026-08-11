@@ -1,0 +1,5 @@
+#!/bin/sh
+# Ensure the D-Bus system bus daemon is up before starting elogind
+
+# Execute elogind in the foreground so lksystem can track it
+exec /usr/lib/elogind/elogind --daemon=false
