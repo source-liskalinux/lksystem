@@ -1,5 +1,16 @@
 #!/bin/sh
 # Ensure the D-Bus system bus daemon is up before starting elogind
+wait_for_socket() {
+  timeout=30
+  while ! test -S "$1" && ! test -S "$2"; do
+    timeout=$((timeout - 1))
+    if test "$timeout" -eq 0; then
+      exit 1
+    fi
+    sleep 1
+  done
+}
 
+wait_for_socket /run/dbus/system_bus_socket /var/run/dbus/system_bus_socket "D-Bus"
 # Execute elogind in the foreground so lksystem can track it
 exec /usr/lib/elogind/elogind --daemon=false
