@@ -1,0 +1,27 @@
+#!/bin/sh
+rm -rf "${ctmp}"
+
+lksyslogd
+echo $?
+lksyslogd -V
+echo $?
+
+mkdir "${ctmp}"
+echo foo |lksyslogd "${ctmp}"
+echo $?
+cat "${ctmp}"/current
+
+( echo bar; echo baz ) |lksyslogd "${ctmp}"
+echo $?
+cat "${ctmp}"/current
+
+( echo foo; echo bar; echo baz ) |lksyslogd -r: -R fb "${ctmp}"
+echo $?
+cat "${ctmp}"/current
+
+echo t2 >"${ctmp}"/config
+( echo foo; sleep 3 ) |lksyslogd "${ctmp}"
+echo $?
+cat "${ctmp}"/current
+
+rm -rf "${ctmp}"

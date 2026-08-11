@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# lksys starts services concurrently, so wait for D-Bus first
+wait_for_socket() {
+  timeout=30
+  while ! test -S "$1" && ! test -S "$2"; do
+    timeout=$((timeout - 1))
+    if test "$timeout" -eq 0; then
+      exit 1
+    fi
+    sleep 1
+  done
+}
+
+wait_for_socket /run/dbus/system_bus_socket /var/run/dbus/system_bus_socket "D-Bus"
+for networkmanager in /usr/sbin/NetworkManager /usr/bin/NetworkManager; do
+  if test -x "$networkmanager"; then
+    exec "$networkmanager" --no-daemon
+  fi
+done
+exec NetworkManager --no-daemon

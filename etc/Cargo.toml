@@ -1,0 +1,24 @@
+[package]
+name = "lksystem-stages"
+version = "1.0.0"
+edition = "2024"
+
+[lib]
+name = "lksystem_ui"
+crate-type = ["rlib"]
+
+[[bin]]
+name = "lksystem-stage1"
+path = "src/1.rs"
+
+[[bin]]
+name = "lksystem-stage2"
+path = "src/2.rs"
+
+[[bin]]
+name = "lksystem-stage3"
+path = "src/3.rs"
+
+[[bin]]
+name = "lksystem-ctrlaltdel"
+path = "src/ctrlaltdel.rs"

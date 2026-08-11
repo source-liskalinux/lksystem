@@ -1,0 +1,50 @@
+# Rust build output
+etc/target/
+
+# C build output (sources and check fixtures remain tracked)
+src/*.a
+src/*.local
+src/*.o
+src/choose
+src/chpst
+src/compile
+src/lksystem
+src/lksystem-init
+src/lksys
+src/lksyschdir
+src/lksysdir
+src/lksysctl
+src/lksyslogd
+src/load
+src/makelib
+src/runsv
+src/runsvchdir
+src/runsvdir
+src/svlogd
+src/ui-test
+src/socket.lib
+src/sysdeps
+src/systype
+src/direntry.h
+src/hasflock.h
+src/hasinotify.h
+src/hasmkffo.h
+src/hassgact.h
+src/hassgprm.h
+src/hasunshare.h
+src/haswaitp.h
+src/iopause.h
+src/reboot_system.h
+src/select.h
+src/uint64.h
+
+# Initramfs scratch/output
+initramfs/
+*.cpio
+*.cpio.gz
+lksystem-initramfs.img
+
+# Arch package output
+.makepkg/
+pkg/
+*.pkg.tar*
