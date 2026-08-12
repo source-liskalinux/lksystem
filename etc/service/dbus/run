@@ -1,4 +1,4 @@
 #!/bin/sh
-# dbus system bus daemon for lkystem
+# Dbus system bus daemon for lkystem
 mkdir -p /run/dbus
 exec dbus-daemon --system --nofork
