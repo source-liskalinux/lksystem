@@ -1,5 +1,6 @@
 #!/bin/sh
 # NetworkManager service for lksystem
+# Ensure the dbus system bus daemon is up before starting NetworkManager
 wait_for_socket() {
   timeout=30
   while ! test -S "$1" && ! test -S "$2"; do
