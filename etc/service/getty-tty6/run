@@ -1,2 +1,2 @@
 #!/bin/sh
-exec agetty --noclear tty6 linux
+exec chpst -P getty 38400 tty6 linux
