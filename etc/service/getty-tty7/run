@@ -1,2 +1,2 @@
 #!/bin/sh
-exec chpst -P getty 38400 tty7 linux
+exec busybox getty 38400 tty7 linux
