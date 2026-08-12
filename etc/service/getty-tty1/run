@@ -1,2 +1,2 @@
 #!/bin/sh
-exec agetty --noclear tty1 linux
+exec chpst -P getty 38400 tty1 linux
