@@ -45,7 +45,7 @@ fn run() -> InitResult<()> {
     let boot_from_iso = env_flag("LKSYSTEM_INIT_ISO");
     log("Mounting pseudo filesystems....");
     mount_pseudo_filesystems();
-    success("Pseudo filesystems mounted successfully!");
+    success("Pseudo filesystems has been mounted!");
     if boot_from_iso {
         mount_iso_root()?;
     } else {
@@ -84,9 +84,9 @@ fn emit(prefix: &str, color: &str, message: &str, color_message: bool) {
     let mut stderr = io::stderr().lock();
     if stderr.is_terminal() {
         if color_message {
-            let _ = writeln!(stderr, "{color}[  {prefix}  ] {message}\x1b[0m");
+            let _ = writeln!(stderr, "{color}[{prefix}] {message}\x1b[0m");
         } else {
-            let _ = writeln!(stderr, "{color}[  {prefix}  ]\x1b[0m {message}");
+            let _ = writeln!(stderr, "{color}[{prefix}]\x1b[0m {message}");
         }
     } else {
         let _ = writeln!(stderr, "{message}");
@@ -224,7 +224,7 @@ fn mount_real_root() -> InitResult<()> {
     let root = cmdline_value(&cmdline, "root=").ok_or("missing root= kernel parameter")?;
     let root_filesystem = cmdline_value(&cmdline, "rootfstype=");
     let root_flags = cmdline_value(&cmdline, "rootflags=");
-    log(&format!("Resolving target root device: {root}...."));
+    log(&format!("Resolving target root device: {root}"));
     fs::create_dir_all(NEW_ROOT)?;
     for attempt in 1..=15 {
         run_optional("/bin/mdev", &["-s"]);
@@ -236,7 +236,7 @@ fn mount_real_root() -> InitResult<()> {
                 root_filesystem.as_deref(),
                 root_flags.as_deref(),
             ) {
-                success(&format!("Mounted root filesystem {root_device} to {NEW_ROOT}!"));
+                success(&format!("Root filesystem {root_device} has been mounted to {NEW_ROOT}!"));
                 return Ok(());
             }
         }
@@ -392,7 +392,7 @@ fn mount_if_needed(source: &str, target: &str, filesystem: &str) {
         return;
     }
     if let Err(error) = mount_fs(Some(source), target, Some(filesystem), 0, None) {
-        warning(&format!("could not mount {target}! {error}"));
+        warning(&format!("Could not mount {target}! Err: {error}."));
     }
 }
 
@@ -425,10 +425,13 @@ fn run_optional(program: &str, args: &[&str]) {
 }
 
 fn emergency_shell() -> ! {
-    warning("You are now on emergency bash shells!");
+    warning("You are now on emergency bash shell!");
     info("> TIPS for debugging:");
-    info("  - Type 'exit' or Ctrl + D after fixing the issue to retry or reboot.");
+    warning("  - WARNING: Before retry or reboot, made sure you already FIX THE PROBLEM!");
+    info("  - Type 'exit' or Ctrl + D to retry or reboot.");
+    warning("  - WARNING: If you didn't fix the problem before retry or reboot, init will fall to emergency shell again!");
     info("  - After reboot, edit '/etc/lkinit.d/init.rs' file before running lkinit again.");
+    info("Goodluck user! You can do it! ;>");
     unsafe {
         env::set_var("PATH", "/usr/sbin:/usr/bin:/sbin:/bin");
     }
