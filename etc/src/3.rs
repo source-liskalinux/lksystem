@@ -14,15 +14,14 @@ fn control_services(action: &str, services: &[String]) {
         .status()
     {
         Ok(status) if status.success() => {}
-        Ok(status) => ui::warning(format!("Lksysctl {action} exited with {status}")),
-        Err(error) => ui::warning(format!("Cannot run lksysctl {action}: {error}")),
+        Ok(status) => ui::warning(format!("Lksysctl {action} exited with status {status}!")),
+        Err(error) => ui::warning(format!("Cannot run lksysctl {action}! Err: {error}.")),
     }
 }
 
 fn main() -> io::Result<()> {
     let service_dir = Path::new(linux::SERVICE_DIR);
     let mut services = Vec::new();
-    ui::log("Entering lksystem stage 3....");
     if service_dir.is_dir() {
         for entry in fs::read_dir(service_dir)? {
             let entry = entry?;
@@ -34,6 +33,6 @@ fn main() -> io::Result<()> {
     ui::log("Waiting for services to stop....");
     control_services("force-stop", &services);
     control_services("exit", &services);
-    ui::success("Lksystem stage 3 completed successfully!");
+    ui::success("All process completed!");
     Ok(())
 }

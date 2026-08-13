@@ -1,46 +1,58 @@
-PACKAGE=lksystem-1.0.0
-DIRS=etc src
+# Makefile for lksystem.
+#
+# There is no native C code in this tree: every installed program is built
+# by Cargo from either the root crate (the public lksys* tools and the PID 1
+# binary) or the etc/ crate (the boot-stage programs).
 
-PREFIX?=/usr/local
-SBINDIR?=$(PREFIX)/sbin
-SYSCONFDIR?=/etc
-DESTDIR?=
-INSTALL?=install
-C_BINARIES=chpst lksystem lksystem-init lksys lksyschdir lksysdir lksysctl lksyslogd
-RUST_BINARIES=lksystem-stage1 lksystem-stage2 lksystem-stage3 lksystem-ctrlaltdel
-GETTY_SERVICES=getty-tty1 getty-tty2 getty-tty3 getty-tty4 getty-tty5 getty-tty6 getty-tty7 getty-tty8
+PREFIX    ?= /usr
+DESTDIR   ?=
+CARGO     ?= cargo
+CARGOFLAGS ?= --release
+TARGET_DIR     := target/release
+ETC_TARGET_DIR := etc/target/release
+SBINDIR      := $(DESTDIR)$(PREFIX)/sbin
+LKSYSTEM_DIR := $(DESTDIR)/etc/lksystem
+SERVICE_DIR  := $(LKSYSTEM_DIR)/service
+LICENSE_DIR  := $(DESTDIR)$(PREFIX)/share/licenses/lksystem
 
-all: rust c
+# Public commands built from the root crate.
+BIN_TOOLS := lksystem lksys lksysdir lksysctl lksyschdir lksyslogd chpst
 
-c:
-	$(MAKE) -C src
-
-rust:
-	cargo build --manifest-path etc/Cargo.toml --release
-
-check: c rust
-	$(MAKE) -C src check IT="$(C_BINARIES)"
-	cargo test --manifest-path etc/Cargo.toml
-
-install: all
-	$(INSTALL) -d $(DESTDIR)$(SBINDIR) $(DESTDIR)$(SYSCONFDIR)/lksystem/service
-	$(INSTALL) -m 0755 $(addprefix src/,$(C_BINARIES)) $(DESTDIR)$(SBINDIR)/
-	$(INSTALL) -m 0755 $(addprefix etc/target/release/,$(RUST_BINARIES)) $(DESTDIR)$(SBINDIR)/
-	$(INSTALL) -m 0755 etc/target/release/lksystem-stage1 $(DESTDIR)$(SYSCONFDIR)/lksystem/1
-	$(INSTALL) -m 0755 etc/target/release/lksystem-stage2 $(DESTDIR)$(SYSCONFDIR)/lksystem/2
-	$(INSTALL) -m 0755 etc/target/release/lksystem-stage3 $(DESTDIR)$(SYSCONFDIR)/lksystem/3
-	$(INSTALL) -m 0755 etc/target/release/lksystem-ctrlaltdel $(DESTDIR)$(SYSCONFDIR)/lksystem/ctrlaltdel
-	$(INSTALL) -d $(DESTDIR)$(SYSCONFDIR)/lksystem/service/dbus $(DESTDIR)$(SYSCONFDIR)/lksystem/service/elogind $(DESTDIR)$(SYSCONFDIR)/lksystem/service/networkmanager $(addprefix $(DESTDIR)$(SYSCONFDIR)/lksystem/service/,$(GETTY_SERVICES))
-	$(INSTALL) -m 0755 etc/service/dbus/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/dbus/run
-	$(INSTALL) -m 0755 etc/service/elogind/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/elogind/run
-	$(INSTALL) -m 0755 etc/service/networkmanager/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/networkmanager/run
-	for service in $(GETTY_SERVICES); do $(INSTALL) -m 0755 etc/service/$$service/run $(DESTDIR)$(SYSCONFDIR)/lksystem/service/$$service/run; done
-
+# Fixed-path boot stages built from the etc/ crate. Each entry is
+# cargo-binary-name:installed-name, since the stage files are installed
+# without their lksystem-stage prefix at fixed paths lksystem expects.
+STAGE_MAP := lksystem-stage1:1 lksystem-stage2:2 lksystem-stage3:3 \
+             lksystem-ctrlaltdel:ctrlaltdel
+.PHONY: all build build-tools build-stages check test install \
+        install-tools install-stages install-services clean
+all: build
+build: build-tools build-stages
+build-tools:
+	$(CARGO) build $(CARGOFLAGS)
+build-stages:
+	$(CARGO) build $(CARGOFLAGS) --manifest-path etc/Cargo.toml
+check: test
+test: build
+	$(CARGO) test $(CARGOFLAGS) --all-targets
+	$(CARGO) test $(CARGOFLAGS) --all-targets --manifest-path etc/Cargo.toml
+install: install-tools install-stages install-services
+install-tools: build-tools
+	install -d "$(SBINDIR)"
+	for tool in $(BIN_TOOLS); do \
+		install -Dm0755 "$(TARGET_DIR)/$$tool" "$(SBINDIR)/$$tool"; \
+	done
+install-stages: build-stages
+	install -d "$(LKSYSTEM_DIR)"
+	for entry in $(STAGE_MAP); do \
+		cargo_name=$${entry%%:*}; \
+		installed_name=$${entry##*:}; \
+		install -Dm0755 "$(ETC_TARGET_DIR)/$$cargo_name" \
+			"$(LKSYSTEM_DIR)/$$installed_name"; \
+	done
+install-services:
+	install -d "$(SERVICE_DIR)"
+	cp -a etc/service/. "$(SERVICE_DIR)/"
+	find "$(SERVICE_DIR)" -name run -exec chmod 0755 {} +
 clean:
-	find . -name \*~ -exec rm -f {} \;
-	find . -name .??*~ -exec rm -f {} \;
-	find . -name \#?* -exec rm -f {} \;
-
-cleaner: clean
-	rm -f $(PACKAGE).tar.gz
-	rm -f doc/*.html man/*.[0-9] .doc .man
+	$(CARGO) clean
+	$(CARGO) clean --manifest-path etc/Cargo.toml

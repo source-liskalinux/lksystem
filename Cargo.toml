@@ -1,0 +1,38 @@
+[package]
+name = "lksystem"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+colored = "3.1.1"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "lksystem"
+path = "src/bin/lksystem.rs"
+
+[[bin]]
+name = "lksys"
+path = "src/bin/lksys.rs"
+
+[[bin]]
+name = "lksysdir"
+path = "src/bin/lksysdir.rs"
+
+[[bin]]
+name = "lksysctl"
+path = "src/bin/lksysctl.rs"
+
+[[bin]]
+name = "lksyschdir"
+path = "src/bin/lksyschdir.rs"
+
+[[bin]]
+name = "lksyslogd"
+path = "src/bin/lksyslogd.rs"
+
+[[bin]]
+name = "chpst"
+path = "src/bin/chpst.rs"

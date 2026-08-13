@@ -1,4 +1,0 @@
-/* Public domain. */
-
-/* sysdep: -flock */
-#include <unistd.h>

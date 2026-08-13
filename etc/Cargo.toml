@@ -3,6 +3,9 @@ name = "lksystem-stages"
 version = "1.0.0"
 edition = "2024"
 
+[dependencies]
+colored = "3.1.1"
+
 [lib]
 name = "lksystem_ui"
 crate-type = ["rlib"]

@@ -1,7 +1,5 @@
-//! Linux-only process helpers used by the lksystem stage programs.
-
+// Linux-only process helpers used by the lksystem stage programs
 #![allow(dead_code)]
-
 use std::fs::OpenOptions;
 use std::io;
 use std::os::fd::AsRawFd;
@@ -40,7 +38,7 @@ pub fn activate_virtual_terminal(tty: u32) -> io::Result<bool> {
     if tty == 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "virtual terminal numbers start at 1",
+            "terminal start at tty1",
         ));
     }
     let console = match OpenOptions::new().read(true).write(true).open("/dev/tty0") {

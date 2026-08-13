@@ -7,7 +7,7 @@ use std::thread;
 use std::time::Duration;
 
 fn main() -> io::Result<()> {
-    ui::warning("Ctrl + Alt + Del received! Shutdown has been initialized.");
+    ui::warning("Ctrl + Alt + Del received! System shutdown has been initialized.");
     fs::create_dir_all(linux::CONFIG_DIR)?;
     let stopit = format!("{}/stopit", linux::CONFIG_DIR);
     OpenOptions::new()

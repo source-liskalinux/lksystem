@@ -1,2 +1,0 @@
-/* sysdep: +inotify */
-#define HASINOTIFY 1

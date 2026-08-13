@@ -1,2 +1,4 @@
 #!/bin/sh
-exec busybox getty 38400 tty8 linux
+# -P makes busybox getty a session leader (setsid) for its tty, so it
+# properly owns the controlling terminal instead of inheriting lksys's.
+exec chpst -P busybox getty 38400 tty8 linux
