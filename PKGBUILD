@@ -6,7 +6,7 @@ arch=('x86_64')
 url='https://github.com/source-liskalinux/lksystem'
 license=('BSD-3-Clause')
 depends=('dbus' 'glibc' 'networkmanager' 'util-linux' 'busybox' 'eudev')
-makedepends=('rust' 'make')
+makedepends=('rustup' 'make')
 conflicts=('runit')
 backup=(
     'etc/lksystem/service/dbus/run'
@@ -31,6 +31,7 @@ fi
 # This PKGBUILD packages the checked-out local source tree. Run makepkg or
 # lkmake from the repository root
 build() {
+    rustup target add x86_64-unknown-linux-musl
     make PREFIX=/usr
 }
 
