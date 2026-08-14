@@ -1,3 +1,8 @@
+# PKGBUILD For lksystem
+
+# Contributor: Janorovic Volkov <janorovicvolkov@gmail.com>
+# Maintainer: Janorovic Volkov <janorovicvolkov@gmail.com>
+
 pkgname=lksystem
 pkgver=1.0.0
 pkgrel=1
