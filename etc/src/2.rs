@@ -3,6 +3,8 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::process::Command;
+use std::thread;
+use std::time::Duration;
 
 const UDEVD_CANDIDATES: [&str; 4] = [
     "/usr/lib/udev/udevd",
@@ -52,7 +54,18 @@ fn mount_fstab() {
         return;
     }
     ui::log("Mounting filesystems from fstab....");
-    match Command::new("mount").arg("-a").status() {
+    // lksystem starts as PID 1 with no PATH set by anyone up the boot chain
+    // (the initramfs never sets one on the normal boot path), so a bare
+    // "mount" lookup fails with ENOENT here unless we provide a PATH
+    // ourselves, same fix already applied below for the lksysdir handoff.
+    match Command::new("mount")
+        .arg("-a")
+        .env(
+            "PATH",
+            "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        )
+        .status()
+    {
         Ok(status) if status.success() => ui::success("Filesystems from fstab has been mounted!"),
         Ok(status) => ui::warning(format!(
             "Mount -a exited with status {status}! Some filesystems in fstab may be missing or not get configured properly."
@@ -82,13 +95,58 @@ fn main() -> io::Result<()> {
             "Cannot switch default login console to tty1! Err: {error}."
         )),
     }
+    ui::success("All lksystem process completed!");
     ui::log(format!("Starting lksysdir for {service_dir}...."));
-    let mut command = Command::new(lksysdir);
+    let mut command = Command::new(&lksysdir);
     command.args(["-P", &service_dir]).env(
         "PATH",
         "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     );
-    ui::success("All lksystem process completed!");
     ui::log("Handing off to lksysdir....");
-    Err(std::os::unix::process::CommandExt::exec(&mut command))
+    let err = std::os::unix::process::CommandExt::exec(&mut command);
+    if err.kind() == io::ErrorKind::NotFound {
+        ui::error(format!("Cannot find or exec {lksysdir}!"));
+    } else {
+        ui::error(format!("Cannot exec {lksysdir}! Err: {err}."));
+    }
+    ui::error("CRITICAL: Lksysdir could not be started! Falling back to lksystem emergency shell!");
+    ui::error("Initializing emergency shell....");
+    ui::warning("NOTE: No services will be supervised until this the problem is fixed and lksystem is restarted!");
+    run_tty1_shell();
+}
+
+// lksystem equivalent of the initramfs emergency shell, it's only reached
+// when handing off to lksysdir fails. Spawns an interactive shell directly
+// on whatever console activate_virtual_terminal() switched to and respawns
+// it if it exits, so there's always a way in even when the real service 
+// supervisor can't start.
+fn run_tty1_shell() -> ! {
+    const SHELL_CANDIDATES: [(&str, Option<&str>); 4] = [
+        ("/bin/cttyhack", Some("/bin/sh")),
+        ("/bin/cttyhack", Some("/bin/bash")),
+        ("/bin/sh", Some("-i")),
+        ("/bin/bash", Some("-i")),
+    ];
+    ui::line("");
+    ui::error("You are now on emergency bash shell! Good luck!");
+    ui::line("");
+    loop {
+        for (program, arg) in SHELL_CANDIDATES {
+            let mut command = Command::new(program);
+            if let Some(arg) = arg {
+                command.arg(arg);
+            }
+            command.env("TERM", "linux").env(
+                "PATH",
+                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            );
+            match command.status() {
+                // Shell exited cleanly (e.g. "exit" or Ctrl+D) - respawn it.
+                Ok(status) if status.success() => break,
+                Ok(status) => ui::warning(format!("{program} exited with status {status}")),
+                Err(error) => ui::warning(format!("Cannot start {program}! Err: {error}.")),
+            }
+        }
+        thread::sleep(Duration::from_secs(1));
+    }
 }
