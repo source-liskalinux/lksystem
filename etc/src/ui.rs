@@ -43,7 +43,7 @@ pub fn warning(message: impl std::fmt::Display) {
 pub fn error(message: impl std::fmt::Display) {
     emit(Level::Error, message);
 }
-pub fn line(message) {
+pub fn line(message: impl std::fmt::Display) {
     let mut stderr = io::stderr().lock();
     let _ = writeln!(stderr, "{message}");
 }

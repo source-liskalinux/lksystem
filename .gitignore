@@ -6,4 +6,4 @@ Cargo.lock
 
 # Package output
 pkg/
-*.pkg.tar*
+lksystem-*
