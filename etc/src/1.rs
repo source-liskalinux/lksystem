@@ -19,8 +19,15 @@ fn mount_if_needed(source: &str, target: &str, filesystem: &str) -> io::Result<(
         return Ok(());
     }
     fs::create_dir_all(target)?;
+    // stage1 is the very first thing lksystem runs as PID 1. Nothing has
+    // set PATH by this point, so a bare "mount" lookup fails with ENOENT
+    // unless we provide one ourselves (same fix as mount_fstab() in 2.rs).
     let status = Command::new("mount")
         .args(["-t", filesystem, source, target])
+        .env(
+            "PATH",
+            "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        )
         .status()?;
     if status.success() {
         Ok(())
