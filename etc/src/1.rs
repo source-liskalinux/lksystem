@@ -51,6 +51,6 @@ fn main() -> io::Result<()> {
             ui::warning(format!("{error}! Skipping...."));
         }
     }
-    ui::success("Mounting process completed!");
+    ui::success("Mounts proc, sys, and dev process completed!");
     Ok(())
 }

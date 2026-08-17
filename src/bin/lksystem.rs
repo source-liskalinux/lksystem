@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
     if unsafe { getpid() } != 1 {
         return Err(io::Error::new(
             io::ErrorKind::PermissionDenied,
-            "lksystem must run as PID 1",
+            "lksystem must run as PID 1!",
         ));
     }
     unsafe { setsid() };
