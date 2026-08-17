@@ -16,4 +16,4 @@ wait_for_socket() {
 wait_for_socket /run/dbus/system_bus_socket /var/run/dbus/system_bus_socket
 
 # Execute elogind in the foreground so lksysdir can track it
-exec /usr/libexec/elogind --daemon
+exec /usr/libexec/elogind
