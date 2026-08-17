@@ -6,9 +6,7 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-const UDEVD_CANDIDATES: [&str; 4] = [
-    "/usr/lib/udev/udevd",
-    "/lib/udev/udevd",
+const UDEVD_CANDIDATES: [&str; 2] = [
     "/usr/sbin/udevd",
     "/sbin/udevd",
 ];
