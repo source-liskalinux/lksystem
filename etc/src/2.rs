@@ -6,22 +6,10 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-const UDEVD_CANDIDATES: [&str; 2] = [
-    "/usr/sbin/udevd",
-    "/sbin/udevd",
-];
-
 fn start_udev() {
     ui::log("Initializing udev device manager....");
-    let Some(udevd) = UDEVD_CANDIDATES
-        .iter()
-        .find(|candidate| Path::new(candidate).is_file())
-    else {
-        ui::warning("No udevd binary found! Skipping device manager startup....");
-        return;
-    };
-    ui::log(format!("Starting udev device manager ({udevd})...."));
-    match Command::new(udevd).arg("--daemon").status() {
+    ui::log(format!("Starting udev device manager...."));
+    match Command::new("/usr/lib/udev/udevd").arg("--daemon").status() {
         Ok(status) if status.success() => {}
         Ok(status) => {
             ui::warning(format!("{udevd} exited with status {status}! Skipping...."));
