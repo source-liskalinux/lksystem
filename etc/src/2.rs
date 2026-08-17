@@ -12,11 +12,11 @@ fn start_udev() {
     match Command::new("/usr/lib/udev/udevd").arg("--daemon").status() {
         Ok(status) if status.success() => {}
         Ok(status) => {
-            ui::warning(format!("{udevd} exited with status {status}! Skipping...."));
+            ui::warning(format!("Udevd exited with status {status}! Skipping...."));
             return;
         }
         Err(error) => {
-            ui::warning(format!("Cannot start {udevd}! Err: {error}. Skipping...."));
+            ui::warning(format!("Cannot start udevd! Err: {error}. Skipping...."));
             return;
         }
     }
