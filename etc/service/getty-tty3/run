@@ -1,4 +1,5 @@
 #!/bin/sh
 # -P makes busybox getty a session leader (setsid) for its tty, so it
 # properly owns the controlling terminal instead of inheriting lksys's.
+clear
 exec chpst -P busybox getty 38400 tty3 linux
