@@ -5,5 +5,13 @@ mkdir -p /run/dbus /run/lksystem/started
 touch /run/lksystem/started/dbus
 # Ensure D-Bus has its machine ID generated (required by many activated services)
 dbus-uuidgen --ensure
+# FIX: Automatically inject the log-level=ERR flag into ModemManager's activation file
+MM_SVC="/usr/share/dbus-1/system-services/org.freedesktop.ModemManager1.service"
+if [ -f "$MM_SVC" ]; then
+  # If the file does NOT already contain --log-level, modify the Exec line in-place
+  if ! grep -q "\--log-level" "$MM_SVC"; then
+    sed -i 's|^Exec=\(.*\)|Exec=\1 --log-level=ERR|' "$MM_SVC"
+  fi
+fi
 # FIX: Added --nopidfile. The redirection silences dbus-daemon itself perfectly.
 exec dbus-daemon --system --nofork --nopidfile >/dev/null 2>&1
