@@ -81,13 +81,12 @@ fn main() -> io::Result<()> {
         )),
     }
     ui::success("All lksystem process completed!");
-    ui::log(format!("Starting lksysdir...."));
+    ui::log(format!("Initializing lksysdir...."));
     let mut command = Command::new(&lksysdir);
     command.args(["-P", &service_dir]).env(
         "PATH",
         "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     );
-    ui::log("Handing off to lksysdir....");
     let err = std::os::unix::process::CommandExt::exec(&mut command);
     if err.kind() == io::ErrorKind::NotFound {
         ui::error(format!("Cannot find or exec lksysdir!"));
