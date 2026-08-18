@@ -1,5 +1,9 @@
 # Liska System Manager
 
+![](https://img.shields.io/badge/OS-Linux-informational?style=flat&logo=linux&logoColor=white&color=2bbc8a)
+![](https://img.shields.io/badge/Shell-Bash-informational?style=flat&logo=gnu-bash&logoColor=white&color=2bbc8a)
+![](https://img.shields.io/badge/Code-Rust-informational?style=flat&logo=rust&logoColor=white&color=2bbc8a)
+
 Liska System Manager is a Linux init and service supervision toolkit for Liska Linux. The primary PID 1 binary is `lksystem`, the early init
 stages are small Rust programs installed under `/etc/lksystem`, and the
 runit-compatible supervisor (`lksys`, `lksysdir`, `lksysctl`, `lksyschdir`,
