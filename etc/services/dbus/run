@@ -3,4 +3,10 @@ rm -f /run/dbus/pid
 mkdir -p /run/dbus /run/lksystem/started
 touch /run/lksystem/started/dbus
 dbus-uuidgen --ensure
+MM_SVC="/usr/share/dbus-1/system-services/org.freedesktop.ModemManager1.service"
+if [ -f "$MM_SVC" ]; then
+  if ! grep -q "\--log-level" "$MM_SVC"; then
+    sed -i 's|^Exec=\(.*\)|Exec=\1 --log-level=ERR|' "$MM_SVC"
+  fi
+fi
 exec chpst -1 -2 dbus-daemon --system --nofork --nopidfile --nosyslog
