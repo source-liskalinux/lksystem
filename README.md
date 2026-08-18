@@ -17,7 +17,7 @@ The repository currently builds:
 `chpst` covers the common runit/daemontools surface used by `run` scripts:
 `-u`/`-U` (setuidgid/envuidgid, including the `:uid:gid` numeric-only form),
 `-e` (envdir), `-/` (chroot), `-n` (nice), `-P` (new session via `setsid`,
-used by the bundled `getty-tty*` services so busybox getty is a proper
+used by the bundled `agetty-tty*` services so busybox getty is a proper
 session leader for its console), `-0`/`-1`/`-2` (close std fds), `-l`/`-L`
 (flock-based locking held across `exec`), `-b` (argv0), and the resource
 limits `-m -d -o -p -f -c -t` (`-s` for `RLIMIT_STACK` is a non-standard
@@ -50,7 +50,7 @@ install` by default, build and place it manually per
 Bundled service directories are installed below `/etc/lksystem/services`:
 - `dbus`: starts the system bus in the foreground.
 - `networkmanager`: waits for D-Bus before starting NetworkManager.
-- `getty-tty1` through `getty-tty8`: provide virtual-console logins, `getty-tty1` is the default login prompt after boot.
+- `agetty-tty1` through `agetty-tty8`: provide virtual-console logins, `agetty-tty1` is the default login prompt after boot.
 
 Make sure the target system provides the programs those services call, or
 remove services that are not needed before booting.

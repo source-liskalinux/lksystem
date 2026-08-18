@@ -1,0 +1,2 @@
+#!/bin/sh
+exec chpst -P agetty 38400 tty4 linux

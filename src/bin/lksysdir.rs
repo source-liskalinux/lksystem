@@ -58,11 +58,11 @@ fn spawn_lksys(binary: &Path, service: &Path) -> io::Result<Child> {
         .spawn()
 }
 
-fn is_getty(service: &Path) -> bool {
+fn is_agetty(service: &Path) -> bool {
     service
         .file_name()
         .and_then(|name| name.to_str())
-        .is_some_and(|name| name.starts_with("getty"))
+        .is_some_and(|name| name.starts_with("agetty"))
 }
 
 fn is_dbus(service: &Path) -> bool {
@@ -73,8 +73,8 @@ fn is_dbus(service: &Path) -> bool {
 }
 
 // Wipes the screen and scrollback on the active console, the same way
-// systemd clears the console right before it hands off to getty. Called
-// once, right as the getty services are first released, so boot logs from
+// systemd clears the console right before it hands off to agetty. Called
+// once, right as the agetty services are first released, so boot logs from
 // the other services don't linger under the login prompt.
 fn clear_console() {
     if let Ok(mut console) = fs::OpenOptions::new().write(true).open("/dev/console") {
@@ -112,7 +112,7 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
     let mut console_cleared = false;
     loop {
         let services = discover(&directory)?;
-        // dbus gets a head start: every other non-getty service waits until
+        // dbus gets a head start: every other non-agetty service waits until
         // dbus has been spawned at least once, so services that depend on
         // the system bus (e.g. networkmanager) don't race it on boot.
         let dbus_started = services
@@ -121,17 +121,17 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
             .map_or(true, |service| children.contains_key(service.as_path()));
         let others_started = services
             .iter()
-            .filter(|service| !is_getty(service))
+            .filter(|service| !is_agetty(service))
             .all(|service| children.contains_key(service.as_path()));
         if others_started && !console_cleared {
             clear_console();
             console_cleared = true;
         }
         for service in &services {
-            if is_getty(service) && !others_started && !children.contains_key(service) {
+            if is_agetty(service) && !others_started && !children.contains_key(service) {
                 continue;
             }
-            if !is_getty(service)
+            if !is_agetty(service)
                 && !is_dbus(service)
                 && !dbus_started
                 && !children.contains_key(service)

@@ -10,20 +10,20 @@ pkgdesc='Linux-focused runit-compatible service supervision system manager for L
 arch=('x86_64')
 url='https://github.com/source-liskalinux/lksystem'
 license=('BSD-3-Clause')
-depends=('dbus' 'glibc' 'networkmanager' 'util-linux' 'busybox' 'eudev')
+depends=('dbus' 'glibc' 'networkmanager' 'util-linux' 'eudev')
 makedepends=('rustup' 'make')
 conflicts=('runit')
 backup=(
     'etc/lksystem/services/dbus/run'
     'etc/lksystem/services/networkmanager/run'
-    'etc/lksystem/services/getty-tty1/run'
-    'etc/lksystem/services/getty-tty2/run'
-    'etc/lksystem/services/getty-tty3/run'
-    'etc/lksystem/services/getty-tty4/run'
-    'etc/lksystem/services/getty-tty5/run'
-    'etc/lksystem/services/getty-tty6/run'
-    'etc/lksystem/services/getty-tty7/run'
-    'etc/lksystem/services/getty-tty8/run'
+    'etc/lksystem/services/agetty-tty1/run'
+    'etc/lksystem/services/agetty-tty2/run'
+    'etc/lksystem/services/agetty-tty3/run'
+    'etc/lksystem/services/agetty-tty4/run'
+    'etc/lksystem/services/agetty-tty5/run'
+    'etc/lksystem/services/agetty-tty6/run'
+    'etc/lksystem/services/agetty-tty7/run'
+    'etc/lksystem/services/agetty-tty8/run'
 )
 source=()
 sha256sums=()

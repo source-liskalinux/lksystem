@@ -1,5 +1,4 @@
 #!/bin/sh
-# Dbus system bus daemon for lksystem
 rm -f /run/dbus/pid
 mkdir -p /run/dbus /run/lksystem/started
 touch /run/lksystem/started/dbus

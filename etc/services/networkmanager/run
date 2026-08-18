@@ -1,3 +1,2 @@
 #!/bin/sh
-# NetworkManager service for lksystem
-exec chpst -P NetworkManager --no-daemon
+exec NetworkManager --no-daemon

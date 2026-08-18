@@ -44,7 +44,7 @@ service directories below `/etc/lksystem/services`.
 
 Ensure the actual root filesystem provides every executable called by the
 stages and enabled services: `mount`, `wall`, a POSIX shell, `dbus-daemon`,
-`NetworkManager`, BusyBox (for the bundled `getty-tty*` services, which run
+`NetworkManager`, BusyBox (for the bundled `agetty-tty*` services, which run
 `busybox getty`), and their shared libraries. Configure or remove the
 supplied services before booting if those programs are not wanted.
 
