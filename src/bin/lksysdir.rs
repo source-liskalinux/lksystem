@@ -65,6 +65,13 @@ fn is_getty(service: &Path) -> bool {
         .is_some_and(|name| name.starts_with("getty"))
 }
 
+fn is_dbus(service: &Path) -> bool {
+    service
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name == "dbus")
+}
+
 fn main() -> io::Result<()> {
     attach_console_stderr();
     let mut arguments = env::args_os().skip(1);
@@ -94,12 +101,26 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
     let mut children: HashMap<PathBuf, Child> = HashMap::new();
     loop {
         let services = discover(&directory)?;
+        // dbus gets a head start: every other non-getty service waits until
+        // dbus has been spawned at least once, so services that depend on
+        // the system bus (e.g. networkmanager) don't race it on boot.
+        let dbus_started = services
+            .iter()
+            .find(|service| is_dbus(service))
+            .map_or(true, |service| children.contains_key(service.as_path()));
         let others_started = services
             .iter()
             .filter(|service| !is_getty(service))
             .all(|service| children.contains_key(service.as_path()));
         for service in &services {
             if is_getty(service) && !others_started && !children.contains_key(service) {
+                continue;
+            }
+            if !is_getty(service)
+                && !is_dbus(service)
+                && !dbus_started
+                && !children.contains_key(service)
+            {
                 continue;
             }
             let name = || {

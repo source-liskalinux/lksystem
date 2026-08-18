@@ -40,7 +40,7 @@ make DESTDIR="$ROOTFS" PREFIX=/usr install
 This installs the supervisor at `/usr/sbin/lksystem`, native tools such as
 `lksysdir` and `lksysctl` under `/usr/sbin`, and the Rust stage programs at
 `/etc/lksystem/{1,2,3,ctrlaltdel}`. The installation also creates the bundled
-service directories below `/etc/lksystem/service`.
+service directories below `/etc/lksystem/services`.
 
 Ensure the actual root filesystem provides every executable called by the
 stages and enabled services: `mount`, `wall`, a POSIX shell, `dbus-daemon`,

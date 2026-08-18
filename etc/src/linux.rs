@@ -6,7 +6,7 @@ use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_ulong};
 
 pub const CONFIG_DIR: &str = "/etc/lksystem";
-pub const SERVICE_DIR: &str = "/etc/lksystem/service";
+pub const SERVICES_DIR: &str = "/etc/lksystem/services";
 pub const DEFAULT_TTY: u32 = 1;
 
 const ENOTTY: i32 = 25;

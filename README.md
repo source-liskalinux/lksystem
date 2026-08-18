@@ -47,7 +47,7 @@ below `/usr/sbin`. The stage programs are installed at the fixed paths used by
 install` by default, build and place it manually per
 [`docs/initramfs.md`](docs/initramfs.md) only when building an initramfs.
 
-Bundled service directories are installed below `/etc/lksystem/service`:
+Bundled service directories are installed below `/etc/lksystem/services`:
 - `dbus`: starts the system bus in the foreground.
 - `networkmanager`: waits for D-Bus before starting NetworkManager.
 - `getty-tty1` through `getty-tty8`: provide virtual-console logins, `getty-tty1` is the default login prompt after boot.

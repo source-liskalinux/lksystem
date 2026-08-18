@@ -39,7 +39,7 @@ fn mount_if_needed(source: &str, target: &str, filesystem: &str) -> io::Result<(
 fn main() -> io::Result<()> {
     ui::log("Mounting proc, sys, and dev....");
     fs::create_dir_all(linux::CONFIG_DIR)?;
-    fs::create_dir_all(linux::SERVICE_DIR)?;
+    fs::create_dir_all(linux::SERVICES_DIR)?;
     fs::set_permissions(linux::CONFIG_DIR, fs::Permissions::from_mode(0o755))?;
     for (source, target, filesystem) in [
         ("proc", "/proc", "proc"),

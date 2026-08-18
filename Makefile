@@ -12,7 +12,7 @@ TARGET_DIR     := target/x86_64-unknown-linux-musl/release
 ETC_TARGET_DIR := etc/target/x86_64-unknown-linux-musl/release
 SBINDIR      := $(DESTDIR)$(PREFIX)/sbin
 LKSYSTEM_DIR := $(DESTDIR)/etc/lksystem
-SERVICE_DIR  := $(LKSYSTEM_DIR)/service
+SERVICES_DIR := $(LKSYSTEM_DIR)/services
 LICENSE_DIR  := $(DESTDIR)$(PREFIX)/share/licenses/lksystem
 
 # Public commands built from the root crate.
@@ -50,9 +50,9 @@ install-stages: build-stages
 			"$(LKSYSTEM_DIR)/$$installed_name"; \
 	done
 install-services:
-	install -d "$(SERVICE_DIR)"
-	cp -a etc/service/. "$(SERVICE_DIR)/"
-	find "$(SERVICE_DIR)" -name run -exec chmod 0755 {} +
+	install -d "$(SERVICES_DIR)"
+	cp -a etc/services/. "$(SERVICES_DIR)/"
+	find "$(SERVICES_DIR)" -name run -exec chmod 0755 {} +
 clean:
 	$(CARGO) clean
 	$(CARGO) clean --manifest-path etc/Cargo.toml

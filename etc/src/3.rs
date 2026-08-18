@@ -20,7 +20,7 @@ fn control_services(action: &str, services: &[String]) {
 }
 
 fn main() -> io::Result<()> {
-    let service_dir = Path::new(linux::SERVICE_DIR);
+    let service_dir = Path::new(linux::SERVICES_DIR);
     let mut services = Vec::new();
     if service_dir.is_dir() {
         for entry in fs::read_dir(service_dir)? {

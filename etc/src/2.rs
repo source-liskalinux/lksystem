@@ -60,8 +60,7 @@ fn mount_fstab() {
 }
 
 fn main() -> io::Result<()> {
-    let service_dir =
-        env::var("LKSYSTEM_SERVICE_DIR").unwrap_or_else(|_| linux::SERVICE_DIR.to_owned());
+    let service_dir = env::var("LKSYSTEM_SERVICES_DIR").unwrap_or_else(|_| linux::SERVICES_DIR.to_owned());
     let lksysdir = env::var("LKSYSTEM_lksysDIR").unwrap_or_else(|_| "lksysdir".to_owned());
     if env::var_os("LKSYSTEM_SKIP_UDEV").is_none() {
         start_udev();

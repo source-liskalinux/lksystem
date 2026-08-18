@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub const SERVICE_DIR: &str = "/etc/lksystem/service";
+pub const SERVICES_DIR: &str = "/etc/lksystem/services";
 pub const STATUS_LEN: usize = 20;
 pub const STATE_DOWN: u8 = 0;
 pub const STATE_RUN: u8 = 1;
@@ -234,9 +234,9 @@ pub fn service_path(name: &str) -> PathBuf {
     if path.is_absolute() || name.starts_with('.') {
         path
     } else {
-        std::env::var_os("LKSYSTEM_SERVICE_DIR")
+        std::env::var_os("LKSYSTEM_SERVICES_DIR")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(SERVICE_DIR))
+            .unwrap_or_else(|| PathBuf::from(SERVICES_DIR))
             .join(name)
     }
 }

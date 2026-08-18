@@ -14,16 +14,16 @@ depends=('dbus' 'glibc' 'networkmanager' 'util-linux' 'busybox' 'eudev')
 makedepends=('rustup' 'make')
 conflicts=('runit')
 backup=(
-    'etc/lksystem/service/dbus/run'
-    'etc/lksystem/service/networkmanager/run'
-    'etc/lksystem/service/getty-tty1/run'
-    'etc/lksystem/service/getty-tty2/run'
-    'etc/lksystem/service/getty-tty3/run'
-    'etc/lksystem/service/getty-tty4/run'
-    'etc/lksystem/service/getty-tty5/run'
-    'etc/lksystem/service/getty-tty6/run'
-    'etc/lksystem/service/getty-tty7/run'
-    'etc/lksystem/service/getty-tty8/run'
+    'etc/lksystem/services/dbus/run'
+    'etc/lksystem/services/networkmanager/run'
+    'etc/lksystem/services/getty-tty1/run'
+    'etc/lksystem/services/getty-tty2/run'
+    'etc/lksystem/services/getty-tty3/run'
+    'etc/lksystem/services/getty-tty4/run'
+    'etc/lksystem/services/getty-tty5/run'
+    'etc/lksystem/services/getty-tty6/run'
+    'etc/lksystem/services/getty-tty7/run'
+    'etc/lksystem/services/getty-tty8/run'
 )
 source=()
 sha256sums=()
