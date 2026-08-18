@@ -4,5 +4,5 @@ rm -f /run/dbus/pid
 mkdir -p /run/dbus /run/lksystem/started
 touch /run/lksystem/started/dbus
 dbus-uuidgen --ensure
-# FIX: chpst -o strips stdout or stderr handles from dbus AND its children
-exec chpst -o dbus-daemon --system --nofork --nopidfile
+# FIX: chpst -1 -2 strips stdout or stderr handles from dbus AND its children
+exec chpst -1 -2 dbus-daemon --system --nofork --nopidfile
