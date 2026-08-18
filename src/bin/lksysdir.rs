@@ -115,7 +115,7 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
                 .flatten();
             if let Some(status) = exit_status {
                 if status.success() {
-                    ui::success(format!("Service {} exited successfully.", name()));
+                    ui::success(format!("Service {} exited successfully!", name()));
                 } else {
                     ui::warning(format!("Service {} exited with status {status}!", name()));
                 }
@@ -124,6 +124,7 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
             if restart {
                 ui::log(format!("Starting {} service....", name()));
                 children.insert(service.clone(), spawn_lksys(&binary, service)?);
+                ui::success(format!("Service {} has been started!", name()));
             }
         }
         children.retain(|service, child| {
@@ -143,7 +144,6 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
             }
             return Ok(());
         }
-        ui::success("All lksysdir process completed!");
         thread::sleep(Duration::from_secs(1));
     }
 }
