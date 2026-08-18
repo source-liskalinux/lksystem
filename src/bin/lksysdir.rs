@@ -1,12 +1,26 @@
 use lksystem::core::{install_signal_handlers, take_reload, take_terminate};
+use lksystem::ui;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
+use std::os::fd::AsRawFd;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command};
+use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::Duration;
+
+unsafe extern "C" {
+    fn dup2(oldfd: i32, newfd: i32) -> i32;
+}
+
+fn attach_console_stderr() {
+    if let Ok(console) = fs::OpenOptions::new().write(true).open("/dev/console") {
+        unsafe {
+            dup2(console.as_raw_fd(), 2);
+        }
+    }
+}
 
 fn usage() -> ! {
     eprintln!("usage: lksysdir [-P] dir");
@@ -37,10 +51,22 @@ fn discover(directory: &Path) -> io::Result<Vec<PathBuf>> {
 }
 
 fn spawn_lksys(binary: &Path, service: &Path) -> io::Result<Child> {
-    Command::new(binary).arg(service).spawn()
+    Command::new(binary)
+        .arg(service)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+}
+
+fn is_getty(service: &Path) -> bool {
+    service
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.starts_with("getty"))
 }
 
 fn main() -> io::Result<()> {
+    attach_console_stderr();
     let mut arguments = env::args_os().skip(1);
     let process_group = match arguments.next() {
         Some(option) if option == "-P" => true,
@@ -68,13 +94,35 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
     let mut children: HashMap<PathBuf, Child> = HashMap::new();
     loop {
         let services = discover(&directory)?;
+        let others_started = services
+            .iter()
+            .filter(|service| !is_getty(service))
+            .all(|service| children.contains_key(service.as_path()));
         for service in &services {
-            let restart = children
+            if is_getty(service) && !others_started && !children.contains_key(service) {
+                continue;
+            }
+            let name = || {
+                service
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("?")
+            };
+            let exit_status = children
                 .get_mut(service)
-                .map(|child| child.try_wait().map(|status| status.is_some()))
+                .map(|child| child.try_wait())
                 .transpose()?
-                .unwrap_or(true);
+                .flatten();
+            if let Some(status) = exit_status {
+                if status.success() {
+                    ui::success(format!("Service {} exited successfully.", name()));
+                } else {
+                    ui::warning(format!("Service {} exited with status {status}!", name()));
+                }
+            }
+            let restart = exit_status.is_some() || !children.contains_key(service);
             if restart {
+                ui::log(format!("Starting {} service....", name()));
                 children.insert(service.clone(), spawn_lksys(&binary, service)?);
             }
         }
