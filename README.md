@@ -63,5 +63,5 @@ messages when it is safe to do so.
 ## Initramfs
 For boot integration, use a small initramfs `/init` to mount the real root and
 then `exec switch_root "$NEWROOT" /usr/sbin/lksystem`. See
-[`docs/initramfs.md`](docs/initramfs.md) for a full example, packaging notes,
+[`initramfs.md`](docs/initramfs.md) for a full example, packaging notes,
 and a verification checklist.
