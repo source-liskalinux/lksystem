@@ -143,6 +143,7 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
             }
             return Ok(());
         }
+        ui::success("All lksysdir process completed!");
         thread::sleep(Duration::from_secs(1));
     }
 }
