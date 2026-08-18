@@ -1,4 +1,9 @@
 #!/bin/sh
 # Dbus system bus daemon for lkystem
-mkdir -p /run/dbus
-exec dbus-daemon --system --nofork
+mkdir -p /run/dbus /run/lksystem/started
+touch /run/lksystem/started/dbus
+# dbus-daemon's own output is already silenced via inherited fds, but
+# D-Bus-activated services (ModemManager, etc.) don't reliably follow that
+# same inheritance. Force it explicitly here so anything dbus activates
+# starts from a guaranteed /dev/null too.
+exec dbus-daemon --system --nofork >/dev/null 2>&1
