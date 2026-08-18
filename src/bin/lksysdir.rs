@@ -1,5 +1,4 @@
 use lksystem::core::{install_signal_handlers, take_reload, take_terminate};
-use lksystem::ui;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -150,18 +149,9 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
                 .map(|child| child.try_wait())
                 .transpose()?
                 .flatten();
-            if let Some(status) = exit_status {
-                if status.success() {
-                    ui::success(format!("Service {} exited successfully!", name()));
-                } else {
-                    ui::warning(format!("Service {} exited with status {status}!", name()));
-                }
-            }
             let restart = exit_status.is_some() || !children.contains_key(service);
             if restart {
-                ui::log(format!("Starting {} service....", name()));
                 children.insert(service.clone(), spawn_lksys(&binary, service)?);
-                ui::success(format!("Service {} has been started!", name()));
             }
         }
         children.retain(|service, child| {
