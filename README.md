@@ -17,7 +17,7 @@ The repository currently builds:
 `chpst` covers the common runit/daemontools surface used by `run` scripts:
 `-u`/`-U` (setuidgid/envuidgid, including the `:uid:gid` numeric-only form),
 `-e` (envdir), `-/` (chroot), `-n` (nice), `-P` (new session via `setsid`,
-used by the bundled `agetty-tty*` services so busybox getty is a proper
+used by the bundled `agetty-tty*` services so agetty is a proper
 session leader for its console), `-0`/`-1`/`-2` (close std fds), `-l`/`-L`
 (flock-based locking held across `exec`), `-b` (argv0), and the resource
 limits `-m -d -o -p -f -c -t` (`-s` for `RLIMIT_STACK` is a non-standard
