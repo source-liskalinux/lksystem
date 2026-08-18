@@ -15,9 +15,9 @@ wait_for_socket /run/dbus/system_bus_socket /var/run/dbus/system_bus_socket
 # Searching valid NetworkManager binary
 for bin in /usr/bin/NetworkManager /usr/sbin/NetworkManager; do
   if [ -x "$bin" ]; then
-    # FIX: chpst handles session separation (-P) and caps RAM allocation (-m)
+    # FIX: chpst handles caps RAM allocation (-m)
     #      for NetworkManager so it's doesn't crash the lksysdir
-    exec chpst -P -m 104857600 "$bin" --no-daemon
+    exec chpst -m 104857600 "$bin" --no-daemon
   fi
 done
 exit 1
