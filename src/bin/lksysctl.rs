@@ -1,5 +1,6 @@
 use lksystem::core::{
-    open_fifo_writer, read_status, service_path, Status, STATE_DOWN, STATE_RUN, WANT_UP,
+    open_fifo_writer, read_status, request_system_shutdown, service_path, Status, STATE_DOWN,
+    STATE_RUN, WANT_UP,
 };
 use lksystem::ui;
 use std::env;
@@ -11,7 +12,27 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 fn usage() -> ! {
     eprintln!("usage: lksysctl [-v] [-w sec] command service ...");
+    eprintln!("       lksysctl reboot|shutdown|poweroff|halt");
     std::process::exit(100);
+}
+
+/// System-wide power verbs, distinct from the per-service actions below.
+/// Only consulted when no `service` arguments were given (or when this
+/// binary is invoked via one of its /sbin/{reboot,shutdown,poweroff,halt}
+/// multi-call symlinks). So `lksysctl shutdown someservice` still means
+/// runit's per-service "exit", exactly as before.
+fn system_action_for(command: &str) -> Option<&'static str> {
+    Some(match command {
+        "reboot" | "restart" => "reboot",
+        "shutdown" | "poweroff" => "poweroff",
+        "halt" => "halt",
+        _ => return None,
+    })
+}
+
+fn run_system_action(action: &str) -> io::Result<()> {
+    ui::log(format!("Requesting system {action}...."));
+    request_system_shutdown(action)
 }
 
 fn action(command: &str) -> Option<(&'static [u8], bool)> {
@@ -87,6 +108,17 @@ fn control(service: &Path, actions: &[u8]) -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
+    // Busybox-style multi-call dispatch: liskaiso symlinks /sbin/reboot,
+    // /sbin/shutdown, /sbin/poweroff, and /sbin/halt straight to this
+    // binary, so check argv[0]'s basename before touching normal args.
+    let argv0 = env::args().next().unwrap_or_default();
+    let program_name = Path::new(&argv0)
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if let Some(action) = system_action_for(&program_name) {
+        return run_system_action(action);
+    }
     let mut arguments = env::args().skip(1).peekable();
     let mut wait = env::var("LKSYSCTL_WAIT")
         .ok()
@@ -119,6 +151,12 @@ fn main() -> io::Result<()> {
     };
     let services: Vec<_> = arguments.collect();
     if services.is_empty() {
+        // `lksysctl reboot` / `lksysctl shutdown` / etc with no service
+        // name is the system-wide request, anything else with no service
+        // name is a genuine usage error same as before.
+        if let Some(action) = system_action_for(&command) {
+            return run_system_action(action);
+        }
         usage();
     }
     if command == "status" {

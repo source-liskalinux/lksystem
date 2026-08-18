@@ -1,6 +1,7 @@
-use lksystem::core::{install_signal_handlers, take_terminate, SIGTERM};
+use lksystem::core::{install_signal_handlers, take_terminate, REBOOT_CMD_FILE, SIGTERM};
 use lksystem::ui;
 use std::env;
+use std::fs;
 use std::io;
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
@@ -16,6 +17,7 @@ unsafe extern "C" {
 }
 
 const RB_AUTOBOOT: i32 = 0x0123_4567;
+const RB_HALT_SYSTEM: i32 = 0xCDEF_0123_u32 as i32;
 const RB_POWER_OFF: i32 = 0x4321_fedc;
 const STAGES: [&str; 3] = ["/etc/lksystem/1", "/etc/lksystem/2", "/etc/lksystem/3"];
 
@@ -65,10 +67,25 @@ fn main() -> io::Result<()> {
     }
     unsafe {
         sync();
-        reboot(if env::var_os("LKSYSTEM_REBOOT").is_some() {
-            RB_AUTOBOOT
-        } else {
-            RB_POWER_OFF
+        // lksysctl (or anything else) writes the desired action here right
+        // before sending SIGTERM. A plain `kill -TERM 1` with no file
+        // present falls back to the old LKSYSTEM_REBOOT env-var behavior,
+        // so nothing that relied on that directly is broken.
+        let action = fs::read_to_string(REBOOT_CMD_FILE)
+            .ok()
+            .map(|contents| contents.trim().to_owned())
+            .unwrap_or_else(|| {
+                if env::var_os("LKSYSTEM_REBOOT").is_some() {
+                    "reboot".to_owned()
+                } else {
+                    "poweroff".to_owned()
+                }
+            });
+        ui::log(format!("System is going down for {action} now...."));
+        reboot(match action.as_str() {
+            "reboot" => RB_AUTOBOOT,
+            "halt" => RB_HALT_SYSTEM,
+            _ => RB_POWER_OFF,
         });
     }
     loop {

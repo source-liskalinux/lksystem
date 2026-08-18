@@ -46,4 +46,15 @@ check() {
 
 package() {
     make DESTDIR="$pkgdir" PREFIX=/usr install
+    # /sbin and /usr/sbin are both symlinks to /usr/bin (see the
+    # `filesystem` package), so placing these directly in /usr/bin makes
+    # them reachable as /sbin/reboot, /usr/sbin/reboot, and
+    # /usr/bin/reboot alike. Deliberately NOT creating /sbin or /usr/sbin
+    # as real directories here, that would conflict with filesystem's
+    # symlink declarations for those paths, the same class of bug fixed
+    # earlier in eudev's PKGBUILD (dir vs symlink ownership clash).
+    install -d -m755 "${pkgdir}/usr/bin"
+    for cmd in reboot shutdown poweroff halt; do
+        ln -sf /usr/sbin/lksysctl "${pkgdir}/usr/bin/${cmd}"
+    done
 }

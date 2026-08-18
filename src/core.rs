@@ -240,3 +240,21 @@ pub fn service_path(name: &str) -> PathBuf {
             .join(name)
     }
 }
+
+/// Well-known file PID 1 reads right before it calls reboot(2), so a
+/// system-wide "reboot"/"poweroff"/"halt" request can be communicated at
+/// runtime. A plain `kill -TERM 1` (or any other trigger that doesn't write
+/// this file first) falls back to lksystem.rs's own LKSYSTEM_REBOOT env-var
+/// default, so existing behavior is unaffected.
+pub const REBOOT_CMD_FILE: &str = "/run/lksystem/reboot-cmd";
+
+/// Requests a system-wide reboot/poweroff/halt: records the desired action
+/// for PID 1 to pick up, then signals it with SIGTERM. `action` should be
+/// one of "reboot", "poweroff", or "halt".
+pub fn request_system_shutdown(action: &str) -> io::Result<()> {
+    if let Some(parent) = Path::new(REBOOT_CMD_FILE).parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(REBOOT_CMD_FILE, action)?;
+    send_signal(1, SIGTERM)
+}
