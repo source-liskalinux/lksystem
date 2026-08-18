@@ -1,21 +1,8 @@
 #!/bin/sh
 # NetworkManager service for lksystem
-# Ensure the dbus system bus daemon is up before starting NetworkManager
-wait_for_socket() {
-  timeout=15
-  while ! test -S "$1" && ! test -S "$2"; do
-    timeout=$((timeout - 1))
-    if test "$timeout" -eq 0; then
-      exit 1
-    fi
-    sleep 1
-  done
-}
-wait_for_socket /run/dbus/system_bus_socket /var/run/dbus/system_bus_socket
 # Searching valid NetworkManager binary
 for bin in /usr/bin/NetworkManager /usr/sbin/NetworkManager; do
   if [ -x "$bin" ]; then
     exec chpst -P "$bin" --no-daemon
   fi
 done
-exit 1
