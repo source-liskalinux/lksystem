@@ -138,12 +138,6 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
             {
                 continue;
             }
-            let name = || {
-                service
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .unwrap_or("?")
-            };
             let exit_status = children
                 .get_mut(service)
                 .map(|child| child.try_wait())
