@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
+use std::io::Write;
 use std::os::fd::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -72,6 +73,16 @@ fn is_dbus(service: &Path) -> bool {
         .is_some_and(|name| name == "dbus")
 }
 
+// Wipes the screen and scrollback on the active console, the same way
+// systemd clears the console right before it hands off to getty. Called
+// once, right as the getty services are first released, so boot logs from
+// the other services don't linger under the login prompt.
+fn clear_console() {
+    if let Ok(mut console) = fs::OpenOptions::new().write(true).open("/dev/console") {
+        let _ = console.write_all(b"\x1b[H\x1b[2J\x1b[3J");
+    }
+}
+
 fn main() -> io::Result<()> {
     attach_console_stderr();
     let mut arguments = env::args_os().skip(1);
@@ -99,6 +110,7 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
     install_signal_handlers();
     let binary = lksys_binary()?;
     let mut children: HashMap<PathBuf, Child> = HashMap::new();
+    let mut console_cleared = false;
     loop {
         let services = discover(&directory)?;
         // dbus gets a head start: every other non-getty service waits until
@@ -112,6 +124,10 @@ fn supervise(directory: PathBuf, _process_group: bool) -> io::Result<()> {
             .iter()
             .filter(|service| !is_getty(service))
             .all(|service| children.contains_key(service.as_path()));
+        if others_started && !console_cleared {
+            clear_console();
+            console_cleared = true;
+        }
         for service in &services {
             if is_getty(service) && !others_started && !children.contains_key(service) {
                 continue;
