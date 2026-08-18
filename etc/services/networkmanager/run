@@ -1,8 +1,3 @@
 #!/bin/sh
 # NetworkManager service for lksystem
-# Searching valid NetworkManager binary
-for bin in /usr/bin/NetworkManager /usr/sbin/NetworkManager; do
-  if [ -x "$bin" ]; then
-    exec chpst -P "$bin" --no-daemon
-  fi
-done
+exec chpst -P NetworkManager --no-daemon
