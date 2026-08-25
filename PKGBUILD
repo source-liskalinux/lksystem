@@ -22,8 +22,6 @@ backup=(
     'etc/lksystem/services/agetty-tty4/run'
     'etc/lksystem/services/agetty-tty5/run'
     'etc/lksystem/services/agetty-tty6/run'
-    'etc/lksystem/services/agetty-tty7/run'
-    'etc/lksystem/services/agetty-tty8/run'
 )
 source=()
 sha256sums=()
