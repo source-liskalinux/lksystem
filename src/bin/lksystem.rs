@@ -3,6 +3,7 @@ use lksystem::ui;
 use std::env;
 use std::fs;
 use std::io;
+use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -28,6 +29,12 @@ fn start_stage(path: &str) -> io::Result<std::process::Child> {
         .stderr(Stdio::inherit())
         .process_group(0)
         .spawn()
+}
+
+fn clear_console() {
+    if let Ok(mut console) = fs::OpenOptions::new().write(true).open("/dev/console") {
+        let _ = console.write_all(b"\x1b[H\x1b[2J\x1b[3J");
+    }
 }
 
 fn main() -> io::Result<()> {
@@ -78,10 +85,13 @@ fn main() -> io::Result<()> {
                 if env::var_os("LKSYSTEM_REBOOT").is_some() {
                     "reboot".to_owned()
                 } else {
-                    "poweroff".to_owned()
+                    "shutdown".to_owned()
                 }
             });
-        ui::log(format!("System is going down for {action} now...."));
+        clear_console();
+        ui::success(format!("System {action} signal received!"));
+        ui::success("All services has been stopped!");
+        ui::log(format!("System will {action} now...."));
         reboot(match action.as_str() {
             "reboot" => RB_AUTOBOOT,
             "halt" => RB_HALT_SYSTEM,

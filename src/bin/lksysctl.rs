@@ -11,8 +11,36 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 fn usage() -> ! {
-    eprintln!("usage: lksysctl [-v] [-w sec] command service ...");
-    eprintln!("       lksysctl reboot|shutdown|poweroff|halt");
+    println!("");
+    println!("-----------------------------------");
+    println!("::: [ Liska System (1.0.0) ] :::");
+    println!("-----------------------------------");
+    println!("");
+    println!("Usage: lksysctl <args> [command] <service....>");
+    println!("> reboot      | restart     ");
+    println!("> shutdown    | poweroff    ");
+    println!("> halt                      ");
+    println!("> -v                        ");
+    println!("> -w                        ");
+    println!("> up <serv>   | start <serv>       ");
+    println!("> down <serv> | stop <serv>        ");
+    println!("> exit <serv> | shutdown <serv>    ");
+    println!("> once <serv>                      ");
+    println!("> pause <serv>                     ");
+    println!("> cont <serv> | continue <serv>    ");
+    println!("> term <serv>                      ");
+    println!("> kill <serv>                      ");
+    println!("> hup <serv>                       ");
+    println!("> alarm <serv>                     ");
+    println!("> int <serv>                       ");
+    println!("> quit <serv>                      ");
+    println!("> usr1 <serv>                      ");
+    println!("> usr2 <serv>                      ");
+    println!("> restart <serv>                   ");
+    println!("> force-stop <serv>                ");
+    println!("> force-restart <serv>             ");
+    println!("> force-shutdown <serv>            ");
+    println!("");
     std::process::exit(100);
 }
 
@@ -31,7 +59,6 @@ fn system_action_for(command: &str) -> Option<&'static str> {
 }
 
 fn run_system_action(action: &str) -> io::Result<()> {
-    ui::log(format!("Requesting system {action}...."));
     request_system_shutdown(action)
 }
 
@@ -138,10 +165,8 @@ fn main() -> io::Result<()> {
                     .and_then(|seconds| seconds.parse().ok())
                     .unwrap_or_else(|| usage());
             }
-            "-V" => {
-                println!("lksysctl 1.0.0");
-                return Ok(());
-            }
+            "-h" => usage(),
+            "--help" => usage(),
             _ if argument.starts_with('-') => usage(),
             _ => break,
         }

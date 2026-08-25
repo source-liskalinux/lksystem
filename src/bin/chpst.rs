@@ -122,7 +122,7 @@ impl Options {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: chpst [-v] [-u [:]user[:group[:group...]]] [-U user[:group[:group...]]]\n\
+        "Usage: chpst [-v] [-u [:]user[:group[:group...]]] [-U user[:group[:group...]]]\n\
          [-b argv0] [-e envdir] [-/ root] [-n incr] [-P]\n\
          [-0] [-1] [-2] [-l|-L lockfile]\n\
          [-m bytes] [-d bytes] [-o num] [-p num] [-f bytes] [-c bytes]\n\
