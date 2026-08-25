@@ -120,6 +120,13 @@ impl Options {
     }
 }
 
+fn require_root() {
+    if unsafe { libc::getuid() } != 0 {
+        ui::error("Operation not permitted (os error 1)!");
+        std::process::exit(100);
+    }
+}
+
 fn usage() -> ! {
     println!("");
     println!("Usage: chpst <options> [prog] <args....>");
@@ -412,6 +419,7 @@ fn apply_session(options: &Options) {
 }
 
 fn main() {
+    require_root();
     let (options, program) = parse_args();
     if let Some((path, wait)) = &options.lock {
         apply_lock(path, *wait);

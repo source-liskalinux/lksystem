@@ -1,4 +1,5 @@
 use lksystem::core::{install_signal_handlers, take_reload, take_terminate};
+use lksystem::ui;
 use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Write};
@@ -12,6 +13,13 @@ struct LogDirectory {
     size: u64,
     limit: u64,
     timestamp: u8,
+}
+
+fn require_root() {
+    if unsafe { libc::getuid() } != 0 {
+        ui::error("Operation not permitted (os error 1)!");
+        std::process::exit(100);
+    }
 }
 
 fn usage() -> ! {
@@ -111,6 +119,7 @@ impl LogDirectory {
 }
 
 fn main() -> io::Result<()> {
+    require_root();
     let mut arguments = env::args().skip(1).peekable();
     let mut timestamp = 0_u8;
     while let Some(argument) = arguments.peek() {
