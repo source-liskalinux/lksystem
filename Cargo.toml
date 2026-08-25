@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 colored = "3.1.1"
+libc = "0.2.189"
 
 [lib]
 path = "src/lib.rs"
