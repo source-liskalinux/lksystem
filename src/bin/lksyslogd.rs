@@ -15,7 +15,10 @@ struct LogDirectory {
 }
 
 fn usage() -> ! {
-    eprintln!("usage: lksyslogd [-tttvL] [-l len] [-b buflen] dir ...");
+    println!("");
+    println!("Usage: lksyslogd <options> [dir]");
+    println!("> -t     add a timestamp to each line (repeat up to 3x for more precision)");
+    println!("");
     std::process::exit(111);
 }
 
@@ -114,9 +117,6 @@ fn main() -> io::Result<()> {
         if argument == "-t" {
             timestamp = timestamp.saturating_add(1).min(3);
             arguments.next();
-        } else if argument == "-l" || argument == "-b" || argument == "-r" || argument == "-R" {
-            arguments.next();
-            let _ = arguments.next();
         } else if argument.starts_with('-') {
             usage();
         } else {

@@ -23,7 +23,9 @@ fn attach_console_stderr() {
 }
 
 fn usage() -> ! {
-    eprintln!("usage: lksysdir [-P] dir");
+    println!("");
+    println!("Usage: lksysdir <-P> [dir]");
+    println!("");
     std::process::exit(1);
 }
 

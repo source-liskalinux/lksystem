@@ -4,7 +4,9 @@ use std::io;
 use std::path::PathBuf;
 
 fn usage() -> ! {
-    eprintln!("Usage: lksyschdir dir");
+    println!("");
+    println!("Usage: lksyschdir <dir>");
+    println!("");
     std::process::exit(1);
 }
 

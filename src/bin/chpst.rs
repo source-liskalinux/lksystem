@@ -121,14 +121,31 @@ impl Options {
 }
 
 fn usage() -> ! {
-    eprintln!(
-        "Usage: chpst [-v] [-u [:]user[:group[:group...]]] [-U user[:group[:group...]]]\n\
-         [-b argv0] [-e envdir] [-/ root] [-n incr] [-P]\n\
-         [-0] [-1] [-2] [-l|-L lockfile]\n\
-         [-m bytes] [-d bytes] [-o num] [-p num] [-f bytes] [-c bytes]\n\
-         [-t seconds] [-s bytes (extension, RLIMIT_STACK)]\n\
-         prog [args...]"
-    );
+    println!("");
+    println!("Usage: chpst <options> [prog] <args....>");
+    println!("> -v                                   verbose: print the command being run");
+    println!("> -u <[:]user[:group[:group....]]>     switch to user (and group(s)) before running prog,");
+    println!("                                       prefix with ':' to give numeric uid or gid instead of names");
+    println!("> -U <user[:group[:group....]]>        like -u, but only export UID/GID env vars, don't setuid or setgid");
+    println!("> -b argv0                             set argv[0] of prog to argv0");
+    println!("> -e envdir                            load environment variables from envdir (one file per var)");
+    println!("> -/ root                              chroot to root before running prog");
+    println!("> -n incr                              add incr to the process's nice value");
+    println!("> -P                                   run prog in a new session (setsid)");
+    println!("> -0                                   close stdin (redirect from /dev/null)");
+    println!("> -1                                   close stdout (redirect to /dev/null)");
+    println!("> -2                                   close stderr (redirect to /dev/null)");
+    println!("> -l lockfile                          obtain an exclusive lock on lockfile, waiting if needed");
+    println!("> -L lockfile                          like -l, but fail instead of waiting if already locked");
+    println!("> -m <bytes>                           limit total address space (RLIMIT_AS)");
+    println!("> -d <bytes>                           limit data segment size (RLIMIT_DATA)");
+    println!("> -s <bytes>                           limit stack size (RLIMIT_STACK)");
+    println!("> -o <num>                             limit number of open files (RLIMIT_NOFILE)");
+    println!("> -p <num>                             limit number of processes (RLIMIT_NPROC)");
+    println!("> -f <bytes>                           limit output file size (RLIMIT_FSIZE)");
+    println!("> -c <bytes>                           limit core dump size (RLIMIT_CORE)");
+    println!("> -t <seconds>                         limit CPU time (RLIMIT_CPU)");
+    println!("");
     std::process::exit(100);
 }
 
