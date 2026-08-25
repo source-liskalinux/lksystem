@@ -48,7 +48,7 @@ fn usage() -> ! {
 fn require_root() {
     if unsafe { libc::getuid() } != 0 {
         ui::error("Operation not permitted (os error 1)!");
-        std::process::exit(100);
+        std::process::exit(1);
     }
 }
 
