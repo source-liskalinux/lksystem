@@ -45,6 +45,13 @@ fn usage() -> ! {
     std::process::exit(100);
 }
 
+fn require_root() {
+    if unsafe { libc::getuid() } != 0 {
+        ui::error("Operation not permitted (os error 1)!");
+        std::process::exit(100);
+    }
+}
+
 /// System-wide power verbs, distinct from the per-service actions below.
 /// Only consulted when no `service` arguments were given (or when this
 /// binary is invoked via one of its /sbin/{reboot,shutdown,poweroff,halt}
@@ -139,6 +146,7 @@ fn main() -> io::Result<()> {
     // Busybox-style multi-call dispatch: liskaiso symlinks /sbin/reboot,
     // /sbin/shutdown, /sbin/poweroff, and /sbin/halt straight to this
     // binary, so check argv[0]'s basename before touching normal args.
+    require_root();
     let argv0 = env::args().next().unwrap_or_default();
     let program_name = Path::new(&argv0)
         .file_name()
