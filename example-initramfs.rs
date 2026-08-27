@@ -15,6 +15,7 @@ const NEW_ROOT: &str = "/new_root";
 const BOOT_MOUNT: &str = "/run/liska/bootmnt";
 const SOURCE_SQUASHFS: &str = "/src_sfs";
 const COW: &str = "/cow";
+const PATH_ENV: &str = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
 
 const MS_RDONLY: c_ulong = 1;
 const MS_MOVE: c_ulong = 8192;
@@ -31,12 +32,13 @@ unsafe extern "C" {
     fn umount(target: *const c_char) -> c_int;
     fn chroot(path: *const c_char) -> c_int;
     fn execv(path: *const c_char, argv: *const *const c_char) -> c_int;
+    fn sync();
 }
 
 fn main() {
     if let Err(err) = run() {
         error(&format!("CRITICAL: {err}"));
-        error("Initializing emergency shell....");
+        warning("Initializing emergency shell....");
         emergency_shell();
     }
 }
@@ -61,32 +63,36 @@ fn run() -> InitResult<()> {
 }
 
 fn log(message: &str) {
-    emit("i", "\x1b[1;36m", message, false);
+    emit(Some("i"), "\x1b[1;36m", message, false);
 }
 
 fn success(message: &str) {
-    emit("+", "\x1b[1;32m", message, true);
+    emit(Some("+"), "\x1b[1;32m", message, true);
 }
 
 fn warning(message: &str) {
-    emit("!", "\x1b[1;33m", message, true);
+    emit(Some("!"), "\x1b[1;33m", message, true);
 }
 
 fn error(message: &str) {
-    emit("x", "\x1b[1;31m", message, true);
+    emit(Some("x"), "\x1b[1;31m", message, true);
 }
 
-fn info(message: &str) {
-    emit("i", "\x1b[1;36m", message, true);
+fn line(message: &str) {
+    emit(None, "\x1b[1;33m", message, true);
 }
-
-fn emit(prefix: &str, color: &str, message: &str, color_message: bool) {
+    
+fn emit(prefix: Option<&str>, color: &str, message: &str, color_message: bool) {
     let mut stderr = io::stderr().lock();
     if stderr.is_terminal() {
+        let prefix_str = match prefix {
+            Some(p) => format!("[{p}] "),
+            None => String::new(),
+        };
         if color_message {
-            let _ = writeln!(stderr, "{color}[{prefix}] {message}\x1b[0m");
+            let _ = writeln!(stderr, "{color}{prefix_str}{message}\x1b[0m");
         } else {
-            let _ = writeln!(stderr, "{color}[{prefix}]\x1b[0m {message}");
+            let _ = writeln!(stderr, "{color}{prefix_str}\x1b[0m{message}");
         }
     } else {
         let _ = writeln!(stderr, "{message}");
@@ -139,10 +145,12 @@ fn setup_loop_device(file_path: &str) -> InitResult<String> {
     if !Path::new("/dev/loop0").exists() {
         let _ = Command::new("/bin/mknod")
             .args(["/dev/loop0", "b", "7", "0"])
+            .env("PATH", PATH_ENV)
             .status();
     }
     let status = Command::new("losetup")
         .args(["/dev/loop0", file_path])
+        .env("PATH", PATH_ENV)
         .status();
     if let Ok(st) = status {
         if st.success() {
@@ -151,9 +159,14 @@ fn setup_loop_device(file_path: &str) -> InitResult<String> {
     }
     let status_auto = Command::new("losetup")
         .args(["-f", file_path])
+        .env("PATH", PATH_ENV)
         .status();
     if status_auto.is_ok() && status_auto.unwrap().success() {
-        if let Ok(output) = Command::new("losetup").args(["-j", file_path]).output() {
+        if let Ok(output) = Command::new("losetup")
+            .args(["-j", file_path])
+            .env("PATH", PATH_ENV)
+            .output()
+        {
             let out_str = String::from_utf8_lossy(&output.stdout);
             if let Some(dev) = out_str.split(':').next() {
                 if !dev.trim().is_empty() {
@@ -315,21 +328,109 @@ fn cmdline_value(cmdline: &str, key: &str) -> Option<String> {
 }
 
 fn resolve_device(target: &str) -> String {
-    let alias = if let Some(value) = target.strip_prefix("UUID=") {
-        Some(format!("/dev/disk/by-uuid/{value}"))
-    } else if let Some(value) = target.strip_prefix("PARTUUID=") {
-        Some(format!("/dev/disk/by-partuuid/{value}"))
+    if target.starts_with("/dev/") && Path::new(target).exists() {
+        return target.to_owned();
+    }
+    run_optional("/bin/mdev", &["-s"]);
+    let (key, val) = if let Some(v) = target.strip_prefix("UUID=") {
+        ("UUID", v)
+    } else if let Some(v) = target.strip_prefix("LABEL=") {
+        ("LABEL", v)
+    } else if let Some(v) = target.strip_prefix("PARTUUID=") {
+        ("PARTUUID", v)
+    } else if let Some(v) = target.strip_prefix("PARTLABEL=") {
+        ("PARTLABEL", v)
     } else {
-        target
-            .strip_prefix("LABEL=")
-            .map(|value| format!("/dev/disk/by-label/{value}"))
+        ("", "")
     };
-    if let Some(alias) = alias {
-        if Path::new(&alias).exists() {
-            return alias;
+    if !key.is_empty() && !val.is_empty() {
+        if let Some(dev) = find_device_by_tag(key, val) {
+            return dev;
         }
     }
     target.to_owned()
+}
+
+fn find_device_by_tag(key: &str, val: &str) -> Option<String> {
+    if key == "UUID" || key == "LABEL" {
+        let flag = if key == "UUID" { "-U" } else { "-L" };
+        if let Ok(output) = Command::new("blkid")
+            .args([flag, val])
+            .env("PATH", PATH_ENV)
+            .output()
+        {
+            if output.status.success() {
+                let dev = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !dev.is_empty() && Path::new(&dev).exists() {
+                    return Some(dev);
+                }
+            }
+        }
+    }
+    if let Ok(output) = Command::new("blkid").env("PATH", PATH_ENV).output() {
+        let text = String::from_utf8_lossy(&output.stdout);
+        for line in text.lines() {
+            let Some((device, rest)) = line.split_once(':') else {
+                continue;
+            };
+            let device = device.trim();
+            if device.is_empty() {
+                continue;
+            }
+            for (attr_key, attr_val) in parse_blkid_attrs(rest.trim()) {
+                if attr_key.eq_ignore_ascii_case(key) && attr_val == val && Path::new(device).exists() {
+                    return Some(device.to_string());
+                }
+            }
+        }
+    }
+    if let Ok(devices) = candidate_block_devices() {
+        for dev in devices {
+            let dev_str = dev.display().to_string();
+            if let Ok(output) = Command::new("blkid")
+                .args(["-s", key, "-o", "value", &dev_str])
+                .env("PATH", PATH_ENV)
+                .output()
+            {
+                if output.status.success() {
+                    let attr_val = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if attr_val == val {
+                        return Some(dev_str);
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn parse_blkid_attrs(rest: &str) -> Vec<(String, String)> {
+    let mut attrs = Vec::new();
+    let mut remainder = rest;
+    while let Some(eq_idx) = remainder.find('=') {
+        let key = remainder[..eq_idx].trim();
+        if key.is_empty() || key.contains(char::is_whitespace) {
+            break;
+        }
+        let after_eq = &remainder[eq_idx + 1..];
+        let (value, tail) = if let Some(stripped) = after_eq.strip_prefix('"') {
+            match stripped.find('"') {
+                Some(end) => (&stripped[..end], &stripped[end + 1..]),
+                None => (stripped, ""),
+            }
+        } else {
+            match after_eq.find(' ') {
+                Some(end) => (&after_eq[..end], &after_eq[end..]),
+                None => (after_eq, ""),
+            }
+        };
+        attrs.push((key.to_string(), value.to_string()));
+        remainder = tail.trim_start();
+        if remainder.is_empty() {
+            break;
+        }
+    }
+    attrs
 }
 
 fn move_virtual_mounts(sysroot: &str) -> InitResult<()> {
@@ -342,6 +443,9 @@ fn move_virtual_mounts(sysroot: &str) -> InitResult<()> {
     Ok(())
 }
 
+// Here you can add your init or system manager that you'll use.
+// You can add runit, systemd, or other system manager that can
+// run on Linux properly.
 fn find_init_program(sysroot: &str) -> Option<String> {
     [
         "/usr/sbin/lksystem",
@@ -368,10 +472,18 @@ fn switch_root(sysroot: &str, init_path: &str) -> InitResult<()> {
     }
     chroot_to(".")?;
     env::set_current_dir("/")?;
+    // execv() has no envp of its own, it just inherits whatever's already
+    // in this process's environment. Nothing earlier in this file ever sets
+    // PATH on the normal boot path (only emergency_shell() did), so make
+    // sure the new PID 1 (lksystem or whatever init that has been found) 
+    // actually gets a usable PATH instead of starting with none at all.
+    unsafe {
+        env::set_var("PATH", PATH_ENV);
+    }
     if let Err(e) = exec_program(init_path) {
         error(&format!("CRITICAL: Failed to exec {init_path}: {e}"));
         error("CRITICAL: Failed to replace PID 1 process! Emergency shell will be initialize to prevent kernel panic!");
-        error("Initializing emergency shell....");
+        warning("Initializing emergency shell....");
         emergency_shell();
     }
     unreachable!("Execv returned success");
@@ -419,47 +531,134 @@ fn create_dirs<const N: usize>(paths: [&str; N]) {
 fn run_optional(program: &str, args: &[&str]) {
     let _ = Command::new(program)
         .args(args)
+        .env("PATH", PATH_ENV)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .status();
 }
 
-fn emergency_shell() -> ! {
-    warning("You are now on emergency bash shell!");
-    info("> TIPS for debugging:");
-    warning("  - WARNING: Before retry or reboot, made sure you already FIX THE PROBLEM!");
-    info("  - Type 'exit' or Ctrl + D to retry or reboot.");
-    warning("  - WARNING: If you didn't fix the problem before retry or reboot, init will fall to emergency shell again!");
-    info("  - After reboot, edit '/etc/lkinit.d/init.rs' file before running lkinit again.");
-    info("Goodluck user! You can do it! ;>");
-    unsafe {
-        env::set_var("PATH", "/usr/sbin:/usr/bin:/sbin:/bin");
+fn new_root_is_mounted() -> bool {
+    is_mount_point(NEW_ROOT)
+}
+
+fn do_reboot() -> ! {
+    warning("Rebooting....");
+    unsafe { sync() };
+    thread::sleep(Duration::from_secs(1));
+    const REBOOT_CANDIDATES: [(&str, Option<&str>); 4] = [
+        ("reboot", None),
+        ("/bin/reboot", None),
+        ("/usr/bin/reboot", None),
+        ("/bin/busybox", Some("reboot")),
+    ];
+    for (program, arg) in REBOOT_CANDIDATES {
+        let mut command = Command::new(program);
+        if let Some(arg) = arg {
+            command.arg(arg);
+        }
+        command.env("PATH", PATH_ENV);
+        match command.status() {
+            Ok(status) if status.success() => {
+                warning(&format!("Handed off to {program}. Waiting for kernel to restart...."));
+                thread::sleep(Duration::from_secs(3));
+            }
+            Ok(_) | Err(_) => continue,
+        }
     }
+    error("CRITICAL: Reboot command unavailable or ineffective! Halting the system to prevent kernel panic!");
     loop {
-        let status = Command::new("/bin/cttyhack")
-            .arg("/bin/sh")
-            .env("TERM", "linux")
-            .status();
-        if status.is_err() || !status.as_ref().unwrap().success() {
-            let status_bash = Command::new("/bin/cttyhack")
-                .arg("/bin/bash")
-                .env("TERM", "linux")
-                .status();
-            if status_bash.is_err() || !status_bash.as_ref().unwrap().success() {
-                let sh = Command::new("/bin/sh")
-                .arg("-i")
-                .env("TERM", "linux")
-                .status();
-                if sh.is_err() || !sh.as_ref().unwrap().success() {
-                    let _ = Command::new("/bin/bash")
-                    .arg("-i")
-                    .env("TERM", "linux")
-                    .status();
+        thread::sleep(Duration::from_secs(3600));
+    }
+}
+
+fn try_resume_boot() {
+    if new_root_is_mounted() {
+        warning("Detected mounted '/new_root'! Attempting to resume boot process....");
+        for dir in ["dev", "proc", "sys", "run"] {
+            let old = format!("/{dir}");
+            let new = format!("{NEW_ROOT}/{dir}");
+            let _ = fs::create_dir_all(&new);
+            let _ = mount_fs(Some(&old), &new, None, MS_MOVE, None);
+        }
+        match find_init_program(NEW_ROOT) {
+            Some(init) => {
+                success(&format!("Starting {init} as PID 1...."));
+                if let Err(e) = switch_root(NEW_ROOT, &init) {
+                    error(&format!("CRITICAL: switch_root failed: {e}!"));
+                    do_reboot();
                 }
             }
+            None => {
+                error("CRITICAL: No init found in '/new_root' even after manual fix!");
+                do_reboot();
+            }
         }
-        thread::sleep(Duration::from_secs(1));
+    } else {
+        error("CRITICAL: '/new_root' is not mounted!");
+        do_reboot();
     }
+}
+
+fn emergency_shell() -> ! {
+    unsafe {
+        env::set_var("PATH", PATH_ENV);
+    }
+    const SHELL_CANDIDATES: [(&str, Option<&str>); 6] = [
+        ("/bin/cttyhack", Some("/bin/sh")),
+        ("/bin/cttyhack", Some("/bin/bash")),
+        ("/bin/sh", Some("-i")),
+        ("/bin/bash", Some("-i")),
+        ("/bin/busybox", Some("sh")),
+        ("/usr/bin/busybox", Some("sh")),
+    ];
+    if !SHELL_CANDIDATES
+        .iter()
+        .any(|(program, _)| Path::new(program).exists())
+    {
+        error("CRITICAL: No binary shell found in initramfs!");
+        error("CRITICAL: Cannot start emergency shell! Rebooting in 10 seconds....");
+        thread::sleep(Duration::from_secs(10));
+        do_reboot();
+    }
+    warning("You are now on emergency bash shell!");
+    line("");
+    line("------------------------------------------------------------------------------------------------------------------");
+    line("");
+    line("> TIPS for debugging:");
+    line("  - WARNING: Before retry or reboot, made sure you already FIX THE PROBLEM!");
+    line("  - WARNING: If you didn't fix the problem before retry or reboot, init will fall to emergency shell again!");
+    line("  - Type 'exit' or Ctrl + D when done:");
+    line("     * If /new_root is mounted -> init will resume boot automatically.");
+    line("     * If /new_root is NOT yet mounted -> system will reboot for a clean retry.");
+    line("  - After reboot, edit '/etc/lkinit.d/init.rs' file before running lkinit again.");
+    line("");
+    line("------------------------------------------------------------------------------------------------------------------");
+    line("");
+    line("  Goodluck. I know you can do it! ;>");
+    line("");
+    thread::sleep(Duration::from_secs(1));
+    for (program, arg) in SHELL_CANDIDATES {
+        if !Path::new(program).exists() {
+            continue;
+        }
+        let mut command = Command::new(program);
+        if let Some(arg) = arg {
+            command.arg(arg);
+        }
+        command.env("PATH", PATH_ENV).env("TERM", "linux");
+        match command.status() {
+            Ok(_) => {
+                try_resume_boot();
+            }
+            Err(e) => {
+                warning(&format!("Cannot start {program}! Err: {e}. Trying next...."));
+                continue;
+            }
+        }
+    }
+    error("CRITICAL: Every shell candidate failed to start! Rebooting in 10 seconds....");
+    thread::sleep(Duration::from_secs(10));
+    do_reboot();
 }
 
 fn mount_fs(
