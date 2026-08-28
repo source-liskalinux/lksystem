@@ -91,8 +91,8 @@ fn main() -> io::Result<()> {
         clear_console();
         ui::success(format!("System {action} signal received!"));
         ui::success("All services has been stopped!");
-        ui::log(format!("System will {action} in 3 seconds...."));
-        thread::sleep(Duration::from_secs(3));
+        ui::log(format!("System will {action}...."));
+        thread::sleep(Duration::from_secs(2));
         reboot(match action.as_str() {
             "reboot" => RB_AUTOBOOT,
             "halt" => RB_HALT_SYSTEM,
